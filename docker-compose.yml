@@ -1,0 +1,302 @@
+# ==============================================================================
+# Code Review & CI Insights Dashboard - Docker Compose Configuration
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # Application Server (PHP-FPM)
+  # ----------------------------------------------------------------------------
+  app:
+    build:
+      context: .                  # <--- CHANGED: Points to project root
+      dockerfile: backend/Dockerfile # <--- CHANGED: Points to file inside backend
+      target: development
+      args:
+        PHP_VERSION: 8.2
+    container_name: ci_insights_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      # Application code (bind mount for hot-reload in dev)
+      - ./backend:/var/www:delegated
+      # Composer cache (persist across rebuilds)
+      - composer_cache:/root/.composer
+      # PHP-FPM socket (shared with nginx)
+      - php_socket:/var/run/php
+    environment:
+      # Laravel environment
+      APP_ENV: local
+      APP_DEBUG: "true"
+      
+      
+      # Database connection
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ci_insights
+      DB_USERNAME: ci_user
+      DB_PASSWORD: ci_secure_password_change_in_prod
+      
+      # Redis configuration (Laravel Cache + Queue + Horizon)
+      REDIS_HOST: redis
+      REDIS_PASSWORD: null
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      CACHE_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      
+      # Meilisearch configuration
+      SCOUT_DRIVER: meilisearch
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_KEY: masterKey_change_in_production
+      
+      # Mail configuration (log driver for dev, SMTP for prod)
+      MAIL_MAILER: log
+      
+      # Monitoring & Observability
+      LOG_CHANNEL: stack
+      LOG_LEVEL: debug
+      
+      # GitHub OAuth (to be configured later)
+      GITHUB_CLIENT_ID: ""
+      GITHUB_CLIENT_SECRET: ""
+      GITHUB_WEBHOOK_SECRET: ""
+      
+      # Timezone
+      TZ: UTC
+      
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
+    networks:
+      - ci_insights_network
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm -t || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ----------------------------------------------------------------------------
+  # Web Server (Nginx)
+  # ----------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ci_insights_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      # Application code (for serving static assets)
+      - ./backend:/var/www:delegated
+      # Nginx configuration
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      # PHP-FPM socket (shared with app)
+      - php_socket:/var/run/php
+      # Nginx logs
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - ci_insights_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ----------------------------------------------------------------------------
+  # Database (MySQL 8.0)
+  # ----------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: ci_insights_mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: ci_insights
+      MYSQL_USER: ci_user
+      MYSQL_PASSWORD: ci_secure_password_change_in_prod
+      MYSQL_ROOT_PASSWORD: root_password_change_in_prod
+      TZ: UTC
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    # FIXED COMMAND BLOCK BELOW
+    command: 
+      - mysqld
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+      - --max_allowed_packet=64M
+      - --innodb_buffer_pool_size=256M
+      - --innodb_log_file_size=64M
+      - --max_connections=50
+    networks:
+      - ci_insights_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password_change_in_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+  # ----------------------------------------------------------------------------
+  # Cache & Queue (Redis 7)
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: ci_insights_redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      # Persistent data for queue jobs and cache
+      - redis_data:/data
+    networks:
+      - ci_insights_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # Search Engine (Meilisearch)
+  # ----------------------------------------------------------------------------
+  meilisearch:
+    image: getmeili/meilisearch:v1.5
+    container_name: ci_insights_meilisearch
+    restart: unless-stopped
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: masterKey_change_in_production
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_HTTP_PAYLOAD_SIZE_LIMIT: 10485760
+      MEILI_MAX_INDEXING_MEMORY: 256Mb
+      # ADD THIS: Ensures it listens on all network interfaces
+      MEILI_HTTP_ADDR: 0.0.0.0:7700 
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - ci_insights_network
+    healthcheck:
+      # Using 127.0.0.1 is perfect
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:7700/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      # ADD THIS: Prevents it from being marked "unhealthy" during the first few seconds of boot
+      start_period: 20s
+
+  # ----------------------------------------------------------------------------
+  # Queue Worker (Laravel Horizon)
+  # ----------------------------------------------------------------------------
+  horizon:
+    build:
+      context: .                  # <--- CHANGED
+      dockerfile: backend/Dockerfile # <--- CHANGED
+      target: development
+    container_name: ci_insights_horizon
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www:delegated
+      - composer_cache:/root/.composer
+    command: php artisan horizon
+    environment:
+      # Inherit all app environment variables
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_HOST: mysql
+      REDIS_HOST: redis
+      MEILISEARCH_HOST: http://meilisearch:7700
+    depends_on:
+      - app
+      - redis
+    networks:
+      - ci_insights_network
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan horizon:status | grep running || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ----------------------------------------------------------------------------
+  # Scheduler (Laravel Cron)
+  # ----------------------------------------------------------------------------
+  scheduler:
+    build:  
+      context: .                  # <--- CHANGED
+      dockerfile: backend/Dockerfile # <--- CHANGED
+      target: development
+    container_name: ci_insights_scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www:delegated
+      - composer_cache:/root/.composer
+    command: >
+      sh -c "while true; do
+        php artisan schedule:run --verbose --no-interaction &
+        sleep 60
+      done"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_HOST: mysql
+      REDIS_HOST: redis
+    depends_on:
+      - app
+    networks:
+      - ci_insights_network
+
+# ==============================================================================
+# Named Volumes (Persistent Data)
+# ==============================================================================
+volumes:
+  mysql_data:
+    driver: local
+    name: ci_insights_mysql_data
+  redis_data:
+    driver: local
+    name: ci_insights_redis_data
+  meilisearch_data:
+    driver: local
+    name: ci_insights_meilisearch_data
+  composer_cache:
+    driver: local
+    name: ci_insights_composer_cache
+  nginx_logs:
+    driver: local
+    name: ci_insights_nginx_logs
+  php_socket:
+    driver: local
+    name: ci_insights_php_socket
+
+# ==============================================================================
+# Networks
+# ==============================================================================
+networks:
+  ci_insights_network:
+    driver: bridge
+    name: ci_insights_network

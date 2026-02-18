@@ -1,9 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Jobs Table Migration
+ * 
+ * Queue table for database-backed queue driver (fallback).
+ * Primary queue is Redis, this is backup for reliability.
+ * 
+ * NOTE: Not typically used in production (Redis is faster).
+ * Included for local development without Redis.
+ * 
+ * @package Database\Migrations
+ */
 return new class extends Migration
 {
     /**
@@ -12,37 +25,34 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('jobs', function (Blueprint $table) {
-            $table->id();
-            $table->string('queue')->index();
-            $table->longText('payload');
-            $table->unsignedTinyInteger('attempts');
-            $table->unsignedInteger('reserved_at')->nullable();
-            $table->unsignedInteger('available_at');
-            $table->unsignedInteger('created_at');
+            $table->id()->comment('Auto-incrementing primary key');
+            
+            $table->string('queue', 100)
+                ->index()
+                ->comment('Queue name');
+            
+            $table->longText('payload')
+                ->comment('Serialized job data');
+            
+            $table->unsignedTinyInteger('attempts')
+                ->comment('Number of processing attempts');
+            
+            $table->unsignedInteger('reserved_at')
+                ->nullable()
+                ->comment('Timestamp when job was reserved for processing');
+            
+            $table->unsignedInteger('available_at')
+                ->comment('Timestamp when job becomes available');
+            
+            $table->unsignedInteger('created_at')
+                ->comment('Timestamp when job was created');
+            
+            // Indexes for queue processing
+            $table->index(['queue', 'available_at', 'reserved_at'], 'idx_jobs_queue_processing');
         });
-
-        Schema::create('job_batches', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->string('name');
-            $table->integer('total_jobs');
-            $table->integer('pending_jobs');
-            $table->integer('failed_jobs');
-            $table->longText('failed_job_ids');
-            $table->mediumText('options')->nullable();
-            $table->integer('cancelled_at')->nullable();
-            $table->integer('created_at');
-            $table->integer('finished_at')->nullable();
-        });
-
-        Schema::create('failed_jobs', function (Blueprint $table) {
-            $table->id();
-            $table->string('uuid')->unique();
-            $table->text('connection');
-            $table->text('queue');
-            $table->longText('payload');
-            $table->longText('exception');
-            $table->timestamp('failed_at')->useCurrent();
-        });
+        
+        // Add table comment
+        DB::statement("ALTER TABLE jobs COMMENT = 'Database-backed queue jobs (fallback, primary is Redis)'");
     }
 
     /**
@@ -51,7 +61,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('jobs');
-        Schema::dropIfExists('job_batches');
-        Schema::dropIfExists('failed_jobs');
     }
 };

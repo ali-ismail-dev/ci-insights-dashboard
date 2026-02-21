@@ -16,6 +16,8 @@ services:
     container_name: ci_insights_app
     restart: unless-stopped
     working_dir: /var/www
+    env_file:
+      - ./backend/.env
     volumes:
       # Application code (bind mount for hot-reload in dev)
       - ./backend:/var/www:delegated
@@ -61,7 +63,7 @@ services:
       # GitHub OAuth (to be configured later)
       GITHUB_CLIENT_ID: ""
       GITHUB_CLIENT_SECRET: ""
-      GITHUB_WEBHOOK_SECRET: ""
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
       
       # Timezone
       TZ: UTC
@@ -218,6 +220,8 @@ services:
     container_name: ci_insights_horizon
     restart: unless-stopped
     working_dir: /var/www
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/var/www:delegated
       - composer_cache:/root/.composer
@@ -252,6 +256,8 @@ services:
     container_name: ci_insights_scheduler
     restart: unless-stopped
     working_dir: /var/www
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/var/www:delegated
       - composer_cache:/root/.composer

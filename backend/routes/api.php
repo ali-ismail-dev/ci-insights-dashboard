@@ -1,53 +1,44 @@
 <?php
 
-declare(strict_types=1);
-
-use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Api\{
+    AlertController,
+    DashboardController,
+    PullRequestController,
+    RepositoryController,
+    TestRunController,
+    WebhookController
+};
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes - Webhooks
-|--------------------------------------------------------------------------
-|
-| Webhook routes for receiving GitHub/GitLab events.
-| 
-| Rate limiting: 30 requests/minute per IP (configured in Nginx)
-| Additional application-level throttling applied via middleware.
-|
-*/
-
-// Webhook endpoints (no authentication - verified via signature)
+// Webhooks (no auth)
 Route::prefix('webhooks')->group(function () {
-    
-    // GitHub webhook endpoint
-    // POST /api/webhooks/github
-    Route::post('github', [WebhookController::class, 'github'])
-        ->middleware('throttle:webhooks') // 60 req/min
-        ->name('webhooks.github');
-    
-    // GitLab webhook endpoint (future)
-    // POST /api/webhooks/gitlab
-    Route::post('gitlab', [WebhookController::class, 'gitlab'])
-        ->middleware('throttle:webhooks')
-        ->name('webhooks.gitlab');
-    
-    // Test webhook endpoint (dev/staging only)
-    // POST /api/webhooks/test
-    Route::post('test', [WebhookController::class, 'test'])
-        ->middleware('throttle:60,1') // More lenient for testing
-        ->name('webhooks.test');
+    Route::post('github', [WebhookController::class, 'github'])->name('webhooks.github');
+    Route::post('test', [WebhookController::class, 'test'])->name('webhooks.test');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Throttle Configuration
-|--------------------------------------------------------------------------
-|
-| Define custom throttle limits in app/Providers/RouteServiceProvider.php:
-|
-| RateLimiter::for('webhooks', function (Request $request) {
-|     return Limit::perMinute(60)->by($request->ip());
-| });
-|
-*/
+// Public routes
+Route::get('health', fn() => response()->json(['status' => 'healthy']));
+
+// Protected API routes
+Route::middleware(['auth:sanctum'])->group(function () {
+    
+    // Dashboard
+    Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+    
+    // Repositories
+    Route::apiResource('repositories', RepositoryController::class)->only(['index', 'show']);
+    Route::get('repositories/{repository}/pull-requests', [PullRequestController::class, 'index']);
+    Route::get('repositories/{repository}/test-runs', [TestRunController::class, 'index']);
+    Route::get('repositories/{repository}/flaky-tests', [TestRunController::class, 'flakyTests']);
+    
+    // Pull Requests
+    Route::apiResource('pull-requests', PullRequestController::class)->only(['show']);
+    
+    // Test Runs
+    Route::apiResource('test-runs', TestRunController::class)->only(['show']);
+    
+    // Alerts
+    Route::apiResource('alerts', AlertController::class)->only(['index']);
+    Route::post('alerts/{alert}/acknowledge', [AlertController::class, 'acknowledge']);
+    Route::post('alerts/{alert}/resolve', [AlertController::class, 'resolve']);
+});

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Actions\PullRequest\CreateOrUpdatePullRequestAction;
-use App\Actions\PullRequest\UpdatePullRequestMetricsAction;
-use App\Actions\TestRun\ProcessTestRunAction;
+use App\Actions\Alert\DetectFlakyTestsAction;
+use App\Actions\PullRequest\AnalyzePullRequestFilesAction;
 use App\Models\WebhookEvent;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -222,9 +221,7 @@ class ProcessWebhookJob implements ShouldQueue
         
         // Queue file changes analysis if synchronized (new commits)
         if ($action === 'synchronize') {
-            AnalyzePullRequestFilesJob::dispatch($pullRequest)
-                ->onQueue('default')
-                ->delay(now()->addSeconds(5)); // Small delay to allow GitHub API to update
+            app(AnalyzePullRequestFilesAction::class)->execute($pullRequest);
         }
         
         Log::info('Pull request processed', [
@@ -310,9 +307,7 @@ class ProcessWebhookJob implements ShouldQueue
         
         // Queue flakiness detection if tests failed
         if ($testRun && $testRun->failed_tests > 0) {
-            DetectFlakyTestsJob::dispatch($testRun)
-                ->onQueue('low')
-                ->delay(now()->addMinutes(5));
+            app(DetectFlakyTestsAction::class)->execute($testRun);
         }
         
         Log::info('Check event processed', [

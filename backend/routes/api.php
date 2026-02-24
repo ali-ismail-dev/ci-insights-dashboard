@@ -8,7 +8,43 @@ use App\Http\Controllers\Api\{
     TestRunController,
     WebhookController
 };
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
+// Sanctum CSRF cookie route (required for SPA authentication)
+Route::get('/sanctum/csrf-cookie', function () {
+    return response()->json(['message' => 'CSRF cookie set']);
+})->middleware('web');
+
+// Authentication routes (token-based, no sessions needed)
+Route::post('/login', function (Request $request) {
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    if (Auth::attempt($request->only('email', 'password'))) {
+        $user = Auth::user();
+        $token = $user->createToken('api-token')->plainTextToken;
+        return response()->json([
+            'message' => 'Logged in successfully',
+            'user' => $user,
+            'token' => $token
+        ]);
+    }
+
+    return response()->json(['message' => 'Invalid credentials'], 401);
+});
+
+Route::post('/logout', function (Request $request) {
+    $request->user()->currentAccessToken()->delete();
+    return response()->json(['message' => 'Logged out successfully']);
+})->middleware('auth:sanctum');
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
 
 // Webhooks (no auth)
 Route::prefix('webhooks')->group(function () {

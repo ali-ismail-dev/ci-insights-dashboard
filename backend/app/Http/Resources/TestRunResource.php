@@ -36,6 +36,7 @@ class TestRunResource extends JsonResource
             'completed_at' => $this->completed_at?->toIso8601String(),
             'created_at' => $this->created_at->toIso8601String(),
             
+            'test_results' => TestResultResource::collection($this->whenLoaded('testResults')),
             'pull_request' => new PullRequestResource($this->whenLoaded('pullRequest')),
         ];
     }

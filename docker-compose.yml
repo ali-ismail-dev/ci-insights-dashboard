@@ -18,9 +18,13 @@ services:
     working_dir: /var/www
     env_file:
       - ./backend/.env
+    ports:
+    - "3000:3000"
     volumes:
       # Application code (bind mount for hot-reload in dev)
       - ./backend:/var/www:delegated
+      
+      - ./frontend:/var/www/frontend:delegated
       # Composer cache (persist across rebuilds)
       - composer_cache:/root/.composer
       # PHP-FPM socket (shared with nginx)

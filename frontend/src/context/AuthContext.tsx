@@ -17,11 +17,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check token on mount
+    // Check token on mount or when URL changes
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
+    // Check for token in URL params (for OAuth redirects)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    if (tokenFromUrl) {
+      localStorage.setItem('auth_token', tokenFromUrl);
+      // Remove token from URL
+      const newUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, '', newUrl);
+    }
+
     const token = localStorage.getItem('auth_token');
     if (token) {
       // Set the token in axios headers
@@ -56,10 +66,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await authApi.logout();
-    localStorage.removeItem('auth_token');
-    delete apiClient.defaults.headers.common['Authorization'];
-    setUser(null);
+    try {
+      // Get CSRF cookie first
+      await authApi.getCsrf();
+      // Call logout API
+      await authApi.logout();
+    } catch (error) {
+      console.warn('Logout API failed', error);
+    } finally {
+      // Always clear local state
+      localStorage.removeItem('auth_token');
+      delete apiClient.defaults.headers.common['Authorization'];
+      setUser(null);
+    }
   };
 
   return (

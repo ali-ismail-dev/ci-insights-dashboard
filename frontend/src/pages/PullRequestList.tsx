@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { usePullRequests } from '@hooks/useApi';
-import { LoadingSpinner } from '@components/LoadingSpinner';
+import  LoadingSpinner  from '@components/LoadingSpinner';
 
 export default function PullRequestList() {
   const { id } = useParams<{ id: string }>();

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '@/layouts/AuthLayout';
 import { useAuth } from '@/context/AuthContext';
-import { Mail, Lock, Loader2, Github, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Loader2, Github } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Login() {
@@ -96,11 +96,13 @@ export default function Login() {
         </div>
 
         <button
-          type="button"
-          className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition-all"
-        >
-          <Github className="h-5 w-5" /> Login with GitHub
-        </button>
+  type="button"
+  onClick={() => window.location.href = 'http://localhost:8080/auth/github/redirect'}
+  className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition-all"
+>
+  <Github className="h-5 w-5" /> Login with GitHub
+</button>
+
       </form>
       
       <p className="mt-8 text-center text-sm text-slate-600 dark:text-slate-400 font-medium">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '@/layouts/AuthLayout';
-import { apiClient } from '@/api/client';
+import axios from 'axios';
 import { User, Mail, Lock, Loader2, ArrowRight, Github } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -20,19 +20,21 @@ export default function Register() {
     e.preventDefault();
     
     if (formData.password !== formData.password_confirmation) {
-      return toast.error('Passwords do not match');
+       toast.error('Passwords do not match');
+       return;
     }
 
     setIsLoading(true);
     try {
       // Direct call to Laravel registration endpoint
-      await apiClient.post('/register', formData);
+      await axios.post('http://localhost:8080/api/register', formData, { 
+  withCredentials: true 
+});
       toast.success('Account created! Please sign in.');
       navigate('/login');
     } catch (error: any) {
       const errors = error.response?.data?.errors;
-      const message = errors ? Object.values(errors)[0][0] : 'Registration failed';
-      toast.error(message);
+const message = errors ? Object.values(errors).flat()[0] as string : 'Registration failed';      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -117,6 +119,7 @@ export default function Register() {
 
         <button
           type="button"
+          onClick={() => window.location.href = 'http://localhost:8080/auth/github/redirect'}
           className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition-all"
         >
           <Github className="h-5 w-5" /> Continue with GitHub

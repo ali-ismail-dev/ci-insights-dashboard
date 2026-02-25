@@ -68,7 +68,7 @@ class DashboardController extends Controller
             'avg_cycle_time_hours' => $avgCycleTimeHours,
             'ci_success_rate' => $ciSuccessRate,
             'flaky_tests_count' => $flakyTestsCount,
-            'avg_test_coverage' => round($avgTestCoverage, 1),
+            'avg_test_coverage' => round(floatval($avgTestCoverage), 1),
             'stale_prs_count' => $stalePrsCount,
         ]);
     }

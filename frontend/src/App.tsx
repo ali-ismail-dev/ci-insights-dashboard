@@ -6,7 +6,7 @@ import { Toaster } from 'react-hot-toast';
 
 // Guards & Providers
  import { AuthProvider } from '@/context/AuthContext'; // I will provide this next
-// import ProtectedRoute from '@/components/auth/ProtectedRoute'; // I will provide this next
+import ProtectedRoute from '@/components/auth/ProtectedRoute'; // I will provide this next
 
 // Layouts
 import { MainLayout } from '@/layouts/MainLayout';
@@ -58,9 +58,9 @@ function App() {
 
               {/* Private Application Routes */}
               <Route path="/" element={
-                /* <ProtectedRoute> */ 
+                <ProtectedRoute> 
                   <MainLayout /> 
-                /* </ProtectedRoute> */
+                </ProtectedRoute>
               }>
                 <Route index element={
                   <Suspense fallback={<PageLoader />}>

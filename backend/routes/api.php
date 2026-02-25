@@ -17,6 +17,7 @@ Route::get('/sanctum/csrf-cookie', function () {
     return response()->json(['message' => 'CSRF cookie set']);
 })->middleware('web');
 
+
 // Authentication routes (token-based, no sessions needed)
 Route::post('/login', function (Request $request) {
     $request->validate([
@@ -35,6 +36,35 @@ Route::post('/login', function (Request $request) {
     }
 
     return response()->json(['message' => 'Invalid credentials'], 401);
+});
+
+Route::post('/register', function (Request $request) {
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|min:8|confirmed',
+    ]);
+
+    $user = \App\Models\User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+        'provider' => 'local',
+        'username' => $request->email, // or generate unique username
+        'role' => 'user',
+        'is_active' => true,
+        'timezone' => 'UTC',
+        'email_notifications' => true,
+        'slack_notifications' => false,
+    ]);
+
+    $token = $user->createToken('api-token')->plainTextToken;
+
+    return response()->json([
+        'message' => 'Account created successfully',
+        'user' => $user,
+        'token' => $token
+    ], 201);
 });
 
 Route::post('/logout', function (Request $request) {

@@ -10,12 +10,11 @@ import {
   GitPullRequest, 
   Settings, 
   Activity, 
-  Clock, 
-  CheckCircle2, 
   ChevronLeft,
-  ExternalLink
+  ExternalLink,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 
 import { 
   AreaChart, 
@@ -26,9 +25,8 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
-import { useDailyMetrics } from '../hooks/useApi'; // Ensure this path is correct
+import { useDailyMetrics } from '../hooks/useApi';
 import { subDays, format } from 'date-fns';
-
 
 // ============================================================================
 // Internal Components
@@ -63,19 +61,15 @@ export default function RepositoryDetail() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats(repoId);
   const { data: prs, isLoading: prsLoading } = usePullRequests(repoId, { state: 'all' }, 1, 10);
 
-  // Calculate date range for metrics
   const dateTo = format(new Date(), 'yyyy-MM-dd');
   const dateFrom = format(subDays(new Date(), 30), 'yyyy-MM-dd');
   
-  // All hooks must be called before any conditional returns
   const { data: metrics, isLoading: metricsLoading } = useDailyMetrics(repoId, dateFrom, dateTo);
 
-  // Extract the actual repo object from the 'data' wrapper if it exists
   const repo = (repoResponse as any)?.data || repoResponse;
 
   if (repoLoading || statsLoading) return <div className="h-96 flex items-center justify-center"><LoadingSpinner /></div>;
   if (!repo) return <div className="text-center py-20 font-bold text-slate-500">Repository not found.</div>;
-
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
@@ -130,62 +124,67 @@ export default function RepositoryDetail() {
 
       {/* Content Rendering */}
       {activeTab === 'overview' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
-  <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-    <Activity className="w-5 h-5 text-indigo-500" /> Success Rate Trend (Last 30 Days)
-  </h3>
-  <div className="h-72 w-full">
-    {metricsLoading ? (
-      <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl animate-pulse">
-        <LoadingSpinner />
-      </div>
-    ) : (
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={metrics}>
-          <defs>
-            <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
-              <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-          <XAxis 
-            dataKey="date" 
-            tickFormatter={(str) => format(new Date(str), 'MMM d')}
-            tick={{fontSize: 10, fontWeight: 700}}
-            stroke="#94a3b8"
-          />
-          <YAxis 
-            domain={[0, 100]} 
-            tick={{fontSize: 10, fontWeight: 700}}
-            stroke="#94a3b8"
-            tickFormatter={(val) => `${val}%`}
-          />
-          <Tooltip 
-  labelFormatter={(label) => format(new Date(label), 'MMM d, yyyy')}
-  contentStyle={{ 
-    borderRadius: '12px', 
-    border: 'none', 
-    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-    backgroundColor: '#ffffff',
-    fontSize: '12px',
-    fontWeight: 700
-  }}
-/>
-          <Area 
-            type="monotone" 
-            dataKey="success_rate" 
-            stroke="#6366f1" 
-            strokeWidth={3}
-            fillOpacity={1} 
-            fill="url(#colorRate)" 
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    )}
-  </div>
-</div>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <MetricTile 
+              label="Success Rate" 
+              value={`${Math.round(stats?.ci_success_rate || 0)}%`} 
+              icon={CheckCircle2} 
+              color="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
+            />
+            <MetricTile 
+              label="Avg Cycle Time" 
+              value={`${Math.round(stats?.avg_cycle_time_hours || 0)}h`} 
+              icon={Clock} 
+              color="bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400" 
+            />
+            <MetricTile 
+              label="Open PRs" 
+              value={stats?.open_prs || 0} 
+              icon={GitPullRequest} 
+              color="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400" 
+            />
+          </div>
 
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-indigo-500" /> Success Rate Trend (Last 30 Days)
+            </h3>
+            <div className="h-72 w-full">
+              {metricsLoading ? (
+                <div className="h-full flex items-center justify-center"><LoadingSpinner /></div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={metrics}>
+                    <defs>
+                      <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis 
+                      dataKey="date" 
+                      tickFormatter={(str) => format(new Date(str), 'MMM d')}
+                      tick={{fontSize: 10, fontWeight: 700}}
+                      stroke="#94a3b8"
+                    />
+                    <YAxis 
+                      tick={{fontSize: 10, fontWeight: 700}}
+                      stroke="#94a3b8"
+                      tickFormatter={(val) => `${val}%`}
+                    />
+                    <Tooltip 
+                      labelFormatter={(label) => format(new Date(label), 'MMM d, yyyy')}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Area type="monotone" dataKey="success_rate" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorRate)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {activeTab === 'pull-requests' && (
@@ -204,9 +203,8 @@ export default function RepositoryDetail() {
                            <div>
                               <h4 className="font-bold text-slate-900 dark:text-white">#{pr.number} {pr.title}</h4>
                               <p className="text-xs text-slate-500 font-medium">
-  Created {formatDistanceToNow(new Date(pr.created_at), { addSuffix: true })} by {pr.author?.name || 'testuser'}
-</p>
-
+                                Created by {pr.author?.name || 'author'}
+                              </p>
                            </div>
                         </div>
                         <Link to={`/pull-requests/${pr.id}`} className="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-black uppercase hover:bg-indigo-600 hover:text-white transition-all">
@@ -217,37 +215,23 @@ export default function RepositoryDetail() {
                 ))}
              </div>
            ) : (
-             <div className="p-20 text-center text-slate-400 font-bold italic">No pull requests found for this repository.</div>
+             <div className="p-20 text-center text-slate-500 font-bold">No pull requests found.</div>
            )}
         </div>
       )}
 
       {activeTab === 'settings' && (
-  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 animate-in fade-in duration-300">
-    <div className="max-w-2xl">
-      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Repository Configuration</h3>
-      <p className="text-sm text-slate-500 mb-8 font-medium">Manage sync settings and webhook integration for this repository.</p>
-      
-      <div className="space-y-6">
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Webhook URL</p>
-          <code className="text-xs font-mono text-indigo-600 dark:text-indigo-400">http://localhost:8080/api/webhooks/github</code>
-        </div>
-        
-        <div className="flex items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-2xl">
-          <div>
-            <p className="text-sm font-bold text-slate-900 dark:text-white">Auto-Sync</p>
-            <p className="text-xs text-slate-500">Automatically fetch new PRs every hour.</p>
-          </div>
-          <div className="h-6 w-11 bg-indigo-600 rounded-full flex items-center px-1">
-            <div className="h-4 w-4 bg-white rounded-full ml-auto shadow-sm" />
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 animate-in fade-in duration-300">
+          <div className="max-w-2xl">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Repository Configuration</h3>
+            <p className="text-sm text-slate-500 mb-8 font-medium">Manage sync settings and webhook integration.</p>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Webhook URL</p>
+              <code className="text-xs font-mono text-indigo-600 dark:text-indigo-400">http://localhost:8080/api/webhooks/github</code>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
     </div>
   );
 }

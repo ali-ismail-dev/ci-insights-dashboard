@@ -1,33 +1,29 @@
 import { useParams, Link } from 'react-router-dom';
-import { usePullRequest, useTestRuns } from '../hooks/useApi';
+import { usePullRequest } from '../hooks/useApi';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { 
   Clock, 
-  CheckCircle2, 
   XCircle, 
   ChevronLeft,
   ExternalLink,
   GitBranch,
   User as UserIcon,
   Calendar,
-  Zap,
-  Activity, // Added missing import
-  ArrowRight // Added missing import
+  Activity,
+  ArrowRight
 } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { format } from 'date-fns';
 
 export default function PullRequestDetail() {
   const { id } = useParams<{ id: string }>();
   const prId = Number(id);
 
-const { data: prResponse, isLoading: prLoading } = usePullRequest(prId);
+  const { data: prResponse, isLoading: prLoading } = usePullRequest(prId);
 
-// Senior Extract: Handle the 'data' wrapper from the API response
-const pr = (prResponse as any)?.data || prResponse;
+  // Senior Extract: Handle the 'data' wrapper from the API response
+  const pr = (prResponse as any)?.data || prResponse;
 
-const { data: testRuns, isLoading: testsLoading } = useTestRuns(pr?.repository_id || 0, prId);
-
-  if (prLoading || testsLoading) return <div className="h-96 flex items-center justify-center"><LoadingSpinner /></div>;
+  if (prLoading) return <div className="h-96 flex items-center justify-center"><LoadingSpinner /></div>;
   
   // Professional empty state
   if (!pr) return (
@@ -73,41 +69,38 @@ const { data: testRuns, isLoading: testsLoading } = useTestRuns(pr?.repository_i
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <section>
-           {/* CI Run History Section */}
-<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
-  <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-    <Activity className="w-5 h-5 text-indigo-500" /> CI Run History
-  </h3>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-indigo-500" /> CI Run History
+              </h3>
 
-  {/* Senior Path Fix: Use pr.test_runs instead of a separate testRuns variable */}
-  {pr.test_runs?.length ? (
-    <div className="space-y-4">
-      {pr.test_runs.map((run: any) => (
-        <div key={run.id} className="flex items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-          <div className="flex items-center gap-4">
-            <div className={`p-2 rounded-lg ${run.failed_tests > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
-              <Activity className="w-5 h-5" />
+              {pr.test_runs?.length ? (
+                <div className="space-y-4">
+                  {pr.test_runs.map((run: any) => (
+                    <div key={run.id} className="flex items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-2 rounded-lg ${run.failed_tests > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                          <Activity className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{run.workflow_name}</p>
+                          <p className="text-xs text-slate-500 font-medium">Status: {run.status}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${run.failed_tests > 0 ? 'text-rose-600 bg-rose-50' : 'text-emerald-600 bg-emerald-50'}`}>
+                          {run.failed_tests > 0 ? 'Failure' : 'Success'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl">
+                  <p className="text-slate-400 font-bold italic">No CI runs detected.</p>
+                </div>
+              )}
             </div>
-            <div>
-              <p className="text-sm font-bold text-slate-900 dark:text-white">{run.workflow_name}</p>
-              <p className="text-xs text-slate-500 font-medium">Status: {run.status}</p>
-            </div>
-          </div>
-          <div className="text-right">
-             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${run.failed_tests > 0 ? 'text-rose-600 bg-rose-50' : 'text-emerald-600 bg-emerald-50'}`}>
-                {run.failed_tests > 0 ? 'Failure' : 'Success'}
-             </span>
-          </div>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <div className="text-center py-12 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl">
-      <p className="text-slate-400 font-bold italic">No CI runs detected.</p>
-    </div>
-  )}
-</div>
-
           </section>
         </div>
 
@@ -117,7 +110,6 @@ const { data: testRuns, isLoading: testsLoading } = useTestRuns(pr?.repository_i
             <div className="mt-6 space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2"><Clock className="w-5 h-5 opacity-70" /><span className="text-sm font-bold">Cycle Time</span></div>
-                {/* Fixed TS18047: Added null check for cycle_time */}
                 <span className="text-lg font-black">{pr.cycle_time ? Math.round(Number(pr.cycle_time) / 3600) : '--'}h</span>
               </div>
               <div className="flex items-center justify-between">

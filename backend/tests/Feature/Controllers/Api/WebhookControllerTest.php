@@ -9,7 +9,7 @@ use App\Models\WebhookEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
-
+use Illuminate\Support\Facades\Bus;
 /**
  * Webhook Controller Test
  *
@@ -24,7 +24,7 @@ class WebhookControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
+Bus::fake();
         // Create test repository
         $this->repository = Repository::factory()->create([
             'external_id' => 123,

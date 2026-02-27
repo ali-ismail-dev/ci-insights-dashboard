@@ -42,12 +42,25 @@ class TestRunController extends Controller
     
     public function flakyTests(Repository $repository)
     {
+        // Debug: Log repository info
+        \Log::info('Flaky tests requested for repository', [
+            'repository_id' => $repository->id,
+            'repository_name' => $repository->full_name,
+        ]);
+        
         $flakyTests = $repository->testResults()
             ->flaky()
             ->with(['testRun'])
             ->orderBy('flakiness_score', 'desc')
             ->limit(50)
             ->get();
+        
+        // Debug: Log query results
+        \Log::info('Flaky tests query results', [
+            'repository_id' => $repository->id,
+            'count' => $flakyTests->count(),
+            'first_test_id' => $flakyTests->first()?->id,
+        ]);
         
         return response()->json($flakyTests);
     }

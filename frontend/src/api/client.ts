@@ -115,8 +115,13 @@ export const api = {
     return testRun.test_results || [];
   },
 
-  getFlakyTests: (repositoryId: number) => 
-    apiClient.get<TestResult[]>(`/repositories/${repositoryId}/flaky-tests`).then(r => r.data),
+  getFlakyTests: (repositoryId: number) => {
+    console.log(`[API] Getting flaky tests for repository ${repositoryId}`);
+    return apiClient.get<TestResult[]>(`/repositories/${repositoryId}/flaky-tests`).then(r => {
+      console.log(`[API] Flaky tests response for repository ${repositoryId}:`, r.data);
+      return r.data;
+    });
+  },
 
   // Alerts
   getAlerts: (repositoryId?: number, status?: Alert['status']) =>

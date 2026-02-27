@@ -35,7 +35,7 @@ export const queryKeys = {
   testRun: (id: number) => ['test-runs', id] as const,
   
   testResults: (testRunId: number) => ['test-results', testRunId] as const,
-  flakyTests: (repoId: number) => ['flaky-tests', repoId] as const,
+  flakyTests: (repoId: number | null) => ['flaky-tests', repoId] as const,
   
   alerts: (repoId?: number, status?: Alert['status']) =>
     ['alerts', repoId, status] as const,
@@ -157,11 +157,11 @@ export function useTestResults(testRunId: number) {
   });
 }
 
-export function useFlakyTests(repositoryId: number) {
+export function useFlakyTests(repositoryId: number | null) {
   return useQuery({
     queryKey: queryKeys.flakyTests(repositoryId),
-    queryFn: () => api.getFlakyTests(repositoryId),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    queryFn: () => repositoryId ? api.getFlakyTests(repositoryId) : [],
+    staleTime: 30 * 1000, // 30 seconds - reduced to ensure fresh data when switching
     enabled: !!repositoryId,
   });
 }

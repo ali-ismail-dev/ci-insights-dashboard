@@ -1,5 +1,5 @@
 import { useRepositories, useFlakyTests } from '@/hooks/useApi';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   AlertTriangle, 
   Filter, 
@@ -16,8 +16,8 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 // ============================================================================
 
 function FlakyTestCard({ test }: { test: any }) {
-  // Impact logic: If failure rate > 20%, it's "High Impact"
-  const failureRate = (test.failure_count / test.total_runs) * 100;
+  // Use the actual fields from TestResult model
+  const failureRate = test.failure_rate || 0;
   const isHighImpact = failureRate > 15;
 
   return (
@@ -33,10 +33,10 @@ function FlakyTestCard({ test }: { test: any }) {
           </div>
           <div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">
-              {test.name || 'Unknown Test Case'}
+              {test.test_name || 'Unknown Test Case'}
             </h3>
             <p className="text-xs font-mono text-slate-500 mt-1 truncate max-w-md">
-              {test.file_path || 'src/tests/ExampleTest.php'}
+              {test.test_file || 'src/tests/ExampleTest.php'}
             </p>
           </div>
         </div>
@@ -56,11 +56,13 @@ function FlakyTestCard({ test }: { test: any }) {
         </div>
         <div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Total Flakes</p>
-          <p className="text-sm font-black text-slate-900 dark:text-white">{test.failure_count}</p>
+          <p className="text-sm font-black text-slate-900 dark:text-white">{test.retry_count || 0}</p>
         </div>
         <div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Last Seen</p>
-          <p className="text-sm font-black text-slate-900 dark:text-white">2h ago</p>
+          <p className="text-sm font-black text-slate-900 dark:text-white">
+            {test.executed_at ? new Date(test.executed_at).toLocaleString() : 'Unknown'}
+          </p>
         </div>
       </div>
     </div>
@@ -75,11 +77,18 @@ const repoList = (repos: unknown): { id: number; name: string }[] =>
   Array.isArray(repos) ? repos : (repos as { data?: { id: number; name: string }[] })?.data ?? [];
 
 export default function FlakyTests() {
-  const [selectedRepo, setSelectedRepo] = useState<number | undefined>(undefined);
+  const [selectedRepo, setSelectedRepo] = useState<number | null>(null);
   const { data: repositories } = useRepositories();
   const repos = repoList(repositories);
-  const effectiveRepoId = selectedRepo ?? repos[0]?.id ?? 0;
-  const repoId = effectiveRepoId > 0 ? effectiveRepoId : 0;
+  
+  // Auto-select first repository on mount if none is selected
+  useEffect(() => {
+    if (selectedRepo === null && repos.length > 0 && repos[0]) {
+      setSelectedRepo(repos[0].id);
+    }
+  }, [selectedRepo, repos]);
+  
+  const repoId = selectedRepo;
 
   const { data: flakyTests, isLoading } = useFlakyTests(repoId);
 
@@ -104,10 +113,10 @@ export default function FlakyTests() {
           <div className="relative">
             <Filter className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <select
-              value={repoId || ''}
+              value={repoId ?? ''}
               onChange={(e) => {
                 const val = e.target.value;
-                setSelectedRepo(val === '' ? undefined : Number(val));
+                setSelectedRepo(val === '' ? null : Number(val));
               }}
               className="pl-10 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none appearance-none cursor-pointer"
             >

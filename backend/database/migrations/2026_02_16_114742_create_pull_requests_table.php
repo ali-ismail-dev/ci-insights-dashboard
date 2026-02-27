@@ -248,7 +248,10 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE pull_requests COMMENT = 'Pull requests with comprehensive metrics for CI insights'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE pull_requests COMMENT = 'Pull requests with comprehensive metrics for CI insights'");
+        }
+       
     }
 
     /**

@@ -166,7 +166,10 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE test_runs COMMENT = 'CI test run results for flakiness detection and coverage tracking'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE test_runs COMMENT = 'CI test run results for flakiness detection and coverage tracking'");
+        }
+        
     }
 
     /**

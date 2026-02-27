@@ -164,7 +164,9 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE users COMMENT = 'Application users with GitHub/GitLab OAuth integration'");
+        if (config('database.default') === 'mysql') {
+    DB::statement("ALTER TABLE users COMMENT = 'Application users with GitHub/GitLab OAuth integration'");
+}
     }
 
     /**

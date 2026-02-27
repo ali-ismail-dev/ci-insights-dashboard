@@ -135,7 +135,10 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE alert_rules COMMENT = 'Alert rules for automated notifications on CI/PR conditions'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE alert_rules COMMENT = 'Alert rules for automated notifications on CI/PR conditions'");
+        }
+        
     }
 
     /**

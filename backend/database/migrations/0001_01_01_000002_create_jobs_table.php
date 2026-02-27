@@ -52,7 +52,9 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE jobs COMMENT = 'Database-backed queue jobs (fallback, primary is Redis)'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE jobs COMMENT = 'Database-backed queue jobs (fallback, primary is Redis)'");
+        }
     }
 
     /**

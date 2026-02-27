@@ -126,7 +126,10 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE repositories COMMENT = 'GitHub/GitLab repositories being tracked for CI insights'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE repositories COMMENT = 'GitHub/GitLab repositories being tracked for CI insights'");
+        }
+       
     }
 
     /**

@@ -136,7 +136,9 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE webhook_events COMMENT = 'Incoming webhook events from GitHub/GitLab with full payload storage'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE webhook_events COMMENT = 'Incoming webhook events from GitHub/GitLab with full payload storage'");
+        }
     }
 
     /**

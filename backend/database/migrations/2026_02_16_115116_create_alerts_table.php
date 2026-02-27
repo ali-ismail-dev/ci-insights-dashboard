@@ -142,7 +142,10 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE alerts COMMENT = 'Triggered alerts with full context and resolution tracking'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE alerts COMMENT = 'Triggered alerts with full context and resolution tracking'");
+        }
+        
     }
 
     /**

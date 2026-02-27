@@ -166,7 +166,10 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE daily_metrics COMMENT = 'Pre-aggregated daily metrics for fast dashboard queries (materialized view simulation)'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE daily_metrics COMMENT = 'Pre-aggregated daily metrics for fast dashboard queries (materialized view simulation)'");
+        }
+        
     }
 
     /**

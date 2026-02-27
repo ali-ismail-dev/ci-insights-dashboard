@@ -112,7 +112,9 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE file_changes COMMENT = 'File changes per PR for CI failure correlation analysis'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE file_changes COMMENT = 'File changes per PR for CI failure correlation analysis'");
+        }
     }
 
     /**

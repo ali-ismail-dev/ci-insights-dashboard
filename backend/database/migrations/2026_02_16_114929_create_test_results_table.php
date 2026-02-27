@@ -136,7 +136,10 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE test_results COMMENT = 'Individual test results for flakiness detection and history tracking'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE test_results COMMENT = 'Individual test results for flakiness detection and history tracking'");
+        }
+        
     }
 
     /**

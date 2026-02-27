@@ -49,7 +49,10 @@ return new class extends Migration
         });
         
         // Add table comment
-        DB::statement("ALTER TABLE failed_jobs COMMENT = 'Failed background jobs for manual retry and debugging'");
+        if (config('database.default') === 'mysql') {
+            DB::statement("ALTER TABLE failed_jobs COMMENT = 'Failed background jobs for manual retry and debugging'");
+        }
+        
     }
 
     /**

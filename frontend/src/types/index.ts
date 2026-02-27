@@ -198,7 +198,7 @@ export interface TestResult {
   retry_count: number;
   flakiness_score: number | null;
   failure_rate: number | null;
-
+}
 // ---------------------------------------------------------------------------
 // Search API
 // ---------------------------------------------------------------------------
@@ -206,11 +206,16 @@ export interface SearchResponse {
   repositories: Repository[];
   pull_requests: PullRequest[];
 }
+
+// Ensure this matches your backend TestRun or Activity structure
+export interface ActivityLog {
+  id: number;
   tags: string[];
   executed_at: string;
   created_at: string;
   updated_at: string;
 }
+
 
 // ============================================================================
 // Daily Metrics Types

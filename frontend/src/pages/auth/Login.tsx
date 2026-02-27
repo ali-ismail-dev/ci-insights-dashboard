@@ -11,7 +11,7 @@ export default function Login() {
   const { login } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(location.state?.email || '');
   const [password, setPassword] = useState('');
 
   // Redirect path after login (if they were sent here by ProtectedRoute)

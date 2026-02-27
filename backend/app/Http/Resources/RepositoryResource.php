@@ -31,6 +31,7 @@ class RepositoryResource extends JsonResource
             'last_synced_at' => $this->last_synced_at?->toIso8601String(),
             'created_at' => $this->created_at->toIso8601String(),
             'updated_at' => $this->updated_at->toIso8601String(),
+            'pull_requests' => PullRequestResource::collection($this->whenLoaded('pullRequests')),
             
             // Counts (if loaded)
             'pull_requests_count' => $this->whenCounted('pullRequests'),

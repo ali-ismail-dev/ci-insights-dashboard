@@ -37,17 +37,25 @@ class RepositoryController extends Controller
      * 
      * GET /api/repositories/{id}
      */
-    public function show(Repository $repository): RepositoryResource
-    {
-        $repository->loadCount([
-            'pullRequests',
-            'pullRequests as open_prs_count' => function ($query) {
-                $query->where('state', 'open');
-            },
-            'testRuns',
-            'alertRules',
-        ]);
+   public function show(Repository $repository): RepositoryResource
+{
+    $repository->load([
+        // Senior Move: Load the PRs AND the Author in one database trip
+        'pullRequests' => function ($query) {
+            $query->with('author')->latest()->limit(10);
+        },
+    ]);
 
-        return new RepositoryResource($repository);
-    }
+    $repository->loadCount([
+        'pullRequests',
+        'pullRequests as open_prs_count' => function ($query) {
+            $query->where('state', 'open');
+        },
+        'testRuns',
+        'alertRules',
+    ]);
+
+    return new RepositoryResource($repository);
+}
+
 }

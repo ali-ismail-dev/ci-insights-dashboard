@@ -47,7 +47,8 @@ class PullRequestResource extends JsonResource
             'is_stale' => $this->is_stale,
             
             'labels' => $this->labels,
-            
+            'test_runs' => TestRunResource::collection($this->whenLoaded('testRuns')),
+
             'merged_at' => $this->merged_at?->toIso8601String(),
             'created_at' => $this->created_at->toIso8601String(),
             'updated_at' => $this->updated_at->toIso8601String(),

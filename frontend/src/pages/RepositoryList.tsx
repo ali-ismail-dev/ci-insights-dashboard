@@ -2,6 +2,7 @@ import { useRepositories } from '@/hooks/useApi';
 import { GitBranch, Star, Lock, Globe, ChevronRight, Plus, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import toast from 'react-hot-toast';
 
 export default function RepositoryList() {
   const { data: repositories, isLoading, refetch } = useRepositories();
@@ -21,15 +22,21 @@ export default function RepositoryList() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button 
-            onClick={() => refetch()}
+          <button
+            onClick={() => {
+              refetch();
+              toast.success('Syncing with GitHub...');
+            }}
             className="p-2.5 text-slate-500 hover:text-indigo-600 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl transition-all"
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95">
-            <Plus className="w-4 h-4" /> Add Repository
-          </button>
+          <button 
+  onClick={() => toast('GitHub Repository Import is coming soon!', { style: { background: '#3b82f6', color: 'white' } })}
+  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95"
+>
+  <Plus className="w-4 h-4" /> Add Repository
+</button>
         </div>
       </div>
 
@@ -44,8 +51,8 @@ export default function RepositoryList() {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {repoList.map((repo: any) => (
-            <Link 
-              key={repo.id} 
+            <Link
+              key={repo.id}
               to={`/repositories/${repo.id}`}
               className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex items-center justify-between hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none transition-all"
             >

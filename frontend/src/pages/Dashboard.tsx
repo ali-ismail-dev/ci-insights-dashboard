@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   GitPullRequest,
   CheckCircle2,
@@ -103,10 +104,22 @@ function PRListItem({ pr }: { pr: any }) {
 
 export default function Dashboard() {
   const [selectedRepo, setSelectedRepo] = useState<number | undefined>();
-  const { data: stats, isLoading: statsLoading } = useDashboardStats(selectedRepo);
   const { data: repositories } = useRepositories();
-  const firstRepoId = selectedRepo || repositories?.[0]?.id;
-  const { data: recentPRs, isLoading: prsLoading } = usePullRequests(firstRepoId!, { state: 'all' }, 1, 5);
+ const repoList = Array.isArray(repositories) ? repositories : (repositories as any)?.data || [];
+
+// Fix: We must ensure we have a fallback ID only if selectedRepo is empty
+const activeRepoIdForActivity = selectedRepo || (repoList.length > 0 ? repoList[0].id : undefined);
+
+const { data: stats, isLoading: statsLoading } = useDashboardStats(selectedRepo);
+
+// The 'enabled' flag ensures we don't fetch until we have an ID
+const { data: recentPRs, isLoading: prsLoading } = usePullRequests(
+  activeRepoIdForActivity!, 
+  { state: 'all' }, 
+  1, 
+  5
+);
+
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
@@ -189,7 +202,10 @@ export default function Dashboard() {
             <p className="text-indigo-100 text-sm font-medium leading-relaxed">
               Your average cycle time has decreased by 12% this week. Keep up the small PR sizes to maintain momentum!
             </p>
-            <button className="mt-6 px-4 py-2 bg-white text-indigo-600 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-indigo-50 transition-colors">
+            <button 
+              onClick={() => toast.success('Pro insights report coming soon!')}
+              className="mt-6 px-4 py-2 bg-white text-indigo-600 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-indigo-50 transition-colors"
+            >
               Read Report
             </button>
           </div>

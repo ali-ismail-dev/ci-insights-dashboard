@@ -72,4 +72,20 @@ class DashboardController extends Controller
             'stale_prs_count' => $stalePrsCount,
         ]);
     }
+
+    public function dailyMetrics(int $id, Request $request): \Illuminate\Http\JsonResponse
+{
+    $metrics = \App\Models\DailyMetric::where('repository_id', $id)
+        ->where('metric_date', '>=', now()->subDays(30))
+        ->orderBy('metric_date', 'asc')
+        ->get()
+        ->map(fn($m) => [
+            'date' => $m->metric_date,
+            'success_rate' => (float) $m->ci_success_rate,
+            'cycle_time' => round($m->avg_cycle_time / 3600, 1),
+        ]);
+
+    return response()->json($metrics);
+}
+
 }

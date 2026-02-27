@@ -31,7 +31,7 @@ export default function Register() {
   withCredentials: true 
 });
       toast.success('Account created! Please sign in.');
-      navigate('/login');
+      navigate('/login', { state: { email: formData.email } });
     } catch (error: any) {
       const errors = error.response?.data?.errors;
 const message = errors ? Object.values(errors).flat()[0] as string : 'Registration failed';      toast.error(message);

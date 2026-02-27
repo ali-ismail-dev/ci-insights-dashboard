@@ -96,7 +96,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('repositories/{repository}/pull-requests', [PullRequestController::class, 'index']);
     Route::get('repositories/{repository}/test-runs', [TestRunController::class, 'index']);
     Route::get('repositories/{repository}/flaky-tests', [TestRunController::class, 'flakyTests']);
-    
+    Route::get('/repositories/{id}/metrics/daily', [DashboardController::class, 'dailyMetrics']);
     // Pull Requests
     Route::apiResource('pull-requests', PullRequestController::class)->only(['show']);
     

@@ -69,15 +69,18 @@ return new class extends Migration
             // Generated columns from JSON (for indexing and fast queries)
             // NOTE: Generated columns only supported on MySQL/MariaDB, not PlanetScale
             // Comment out if using PlanetScale
-            $table->bigInteger('pull_request_number')
-                ->nullable()
-                ->storedAs("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.number'))")
-                ->comment('PR number extracted from payload');
+            if (config('database.default') === 'mysql') {
+                $table->bigInteger('pull_request_number')
+                    ->nullable()
+                    ->storedAs("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.number'))")
+                    ->comment('PR number extracted from payload');
+                
+                $table->string('pr_action', 50)
+                    ->nullable()
+                    ->storedAs("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.action'))")
+                    ->comment('PR action extracted from payload');
+            }
             
-            $table->string('pr_action', 50)
-                ->nullable()
-                ->storedAs("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.action'))")
-                ->comment('PR action extracted from payload');
             
             // Processing status
             $table->string('status', 20)

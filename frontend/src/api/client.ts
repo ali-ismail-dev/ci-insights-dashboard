@@ -120,9 +120,9 @@ export const api = {
 
   // Alerts
   getAlerts: (repositoryId?: number, status?: Alert['status']) =>
-    apiClient.get<Alert[]>('/alerts', {
-      params: { repository_id: repositoryId, status },
-    }).then(r => r.data),
+    apiClient.get<PaginatedResponse<Alert>>('/alerts', {
+      params: { repository_id: repositoryId, status, per_page: 20 },
+    }).then(r => r.data.data),
 
   acknowledgeAlert: (id: number) => 
     apiClient.post<Alert>(`/alerts/${id}/acknowledge`).then(r => r.data),

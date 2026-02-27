@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -12,6 +12,9 @@ import {
   ChevronRight,
   Activity
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { useAlerts, useAcknowledgeAlert } from '@/hooks/useApi';
+import type { Alert } from '@/types';
 import GlobalSearch from '@/components/GlobalSearch';
 import { useAuth } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -35,6 +38,17 @@ export function MainLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  // Load open alerts for the current user (global view)
+  const { data: alerts, isLoading: alertsLoading } = useAlerts(undefined, 'open');
+  const acknowledgeAlert = useAcknowledgeAlert();
+
+  const unreadAlerts = useMemo(
+    () => (alerts || []).slice(0, 5),
+    [alerts]
+  );
+
+  const unreadCount = unreadAlerts.length;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -167,9 +181,14 @@ export function MainLayout() {
             <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
               className={`p-2 relative transition-colors rounded-lg ${isNotificationsOpen ? 'bg-slate-100 text-indigo-600 dark:bg-slate-800' : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
+              aria-label={unreadCount ? `${unreadCount} open alerts` : 'No open alerts'}
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-h-[16px] min-w-[16px] px-1 flex items-center justify-center text-[10px] font-bold bg-rose-500 text-white rounded-full border-2 border-white dark:border-slate-900">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
 
             <div className="h-8 w-px bg-slate-200 dark:border-slate-800 mx-2"></div>
@@ -214,20 +233,91 @@ export function MainLayout() {
 
         {/* Notifications Dropdown */}
         {isNotificationsOpen && (
-          <div className="absolute right-8 top-16 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="absolute right-8 top-16 w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-              <h3 className="font-black text-sm text-slate-900 dark:text-white">Notifications</h3>
-              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded">2 New</span>
+              <h3 className="font-black text-sm text-slate-900 dark:text-white">Alerts</h3>
+              {alertsLoading ? (
+                <span className="text-[10px] font-bold text-slate-400">Loading...</span>
+              ) : unreadCount > 0 ? (
+                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded">
+                  {unreadCount} open {unreadCount === 1 ? 'alert' : 'alerts'}
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-slate-400">No open alerts</span>
+              )}
             </div>
             <div className="max-h-96 overflow-y-auto">
-              <div className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors border-b border-slate-50 dark:border-slate-800/50">
-                <p className="text-xs font-bold text-slate-900 dark:text-white">CI Pipeline Failed</p>
-                <p className="text-[10px] text-slate-500 mt-1">Repository backend-api failed on branch main.</p>
-              </div>
-              <div className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
-                <p className="text-xs font-bold text-slate-900 dark:text-white">New Pull Request</p>
-                <p className="text-[10px] text-slate-500 mt-1">#78 created in frontend-app by ali-ismail-dev.</p>
-              </div>
+              {alertsLoading ? (
+                <div className="p-4 text-xs text-slate-400">Fetching latest alerts…</div>
+              ) : unreadCount === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">
+                  All clear! No open alerts right now.
+                </div>
+              ) : (
+                unreadAlerts.map((alert: Alert) => (
+                  <button
+                    key={alert.id}
+                    type="button"
+                    disabled={acknowledgeAlert.isPending}
+                    onClick={async () => {
+                      try {
+                        await acknowledgeAlert.mutateAsync(alert.id);
+                        setIsNotificationsOpen(false);
+                        if (alert.pull_request_id) {
+                          navigate(`/pull-requests/${alert.pull_request_id}`);
+                        } else if (alert.repository_id) {
+                          navigate(`/repositories/${alert.repository_id}`);
+                        } else {
+                          navigate('/');
+                        }
+                      } catch {
+                        // Error toast already shown by useAcknowledgeAlert
+                      }
+                    }}
+                    className="w-full text-left p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors border-b border-slate-50 dark:border-slate-800/50 last:border-b-0"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span
+                        className={`mt-0.5 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide
+                          ${
+                            alert.severity === 'critical'
+                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'
+                              : alert.severity === 'high'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
+                              : alert.severity === 'medium'
+                              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400'
+                              : 'bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200'
+                          }`}
+                      >
+                        {alert.severity}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {alert.title}
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                          {alert.message}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
+                          {alert.repository_id && (
+                            <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">
+                              Repo #{alert.repository_id}
+                            </span>
+                          )}
+                          {alert.pull_request_id && (
+                            <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">
+                              PR #{alert.pull_request_id}
+                            </span>
+                          )}
+                          <span>
+                            {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         )}

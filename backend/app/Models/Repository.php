@@ -116,6 +116,11 @@ class Repository extends Model
         return $this->hasMany(TestRun::class);
     }
 
+    public function testResults(): HasMany
+    {
+        return $this->hasMany(TestResult::class);
+    }
+
     public function alertRules(): HasMany
     {
         return $this->hasMany(AlertRule::class);

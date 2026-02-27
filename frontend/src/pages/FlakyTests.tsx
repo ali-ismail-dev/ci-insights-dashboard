@@ -71,12 +71,17 @@ function FlakyTestCard({ test }: { test: any }) {
 // Main Page
 // ============================================================================
 
+const repoList = (repos: unknown): { id: number; name: string }[] =>
+  Array.isArray(repos) ? repos : (repos as { data?: { id: number; name: string }[] })?.data ?? [];
+
 export default function FlakyTests() {
-  const [selectedRepo, setSelectedRepo] = useState<number | undefined>();
+  const [selectedRepo, setSelectedRepo] = useState<number | undefined>(undefined);
   const { data: repositories } = useRepositories();
-const repoId = selectedRepo || (Array.isArray(repositories) ? repositories[0]?.id : (repositories as any)?.data?.[0]?.id);
-  
-  const { data: flakyTests, isLoading } = useFlakyTests(repoId || 0);
+  const repos = repoList(repositories);
+  const effectiveRepoId = selectedRepo ?? repos[0]?.id ?? 0;
+  const repoId = effectiveRepoId > 0 ? effectiveRepoId : 0;
+
+  const { data: flakyTests, isLoading } = useFlakyTests(repoId);
 
   return (
     <div className="max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
@@ -99,15 +104,17 @@ const repoId = selectedRepo || (Array.isArray(repositories) ? repositories[0]?.i
           <div className="relative">
             <Filter className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <select
-              value={selectedRepo || ''}
-              onChange={(e) => setSelectedRepo(Number(e.target.value))}
+              value={repoId || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedRepo(val === '' ? undefined : Number(val));
+              }}
               className="pl-10 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none appearance-none cursor-pointer"
             >
               <option value="">Select Repository</option>
-              {Array.isArray(repositories) 
-                ? repositories.map((repo: any) => <option key={repo.id} value={repo.id}>{repo.name}</option>)
-                : (repositories as any)?.data?.map((repo: any) => <option key={repo.id} value={repo.id}>{repo.name}</option>)
-              }
+              {repos.map((repo) => (
+                <option key={repo.id} value={repo.id}>{repo.name}</option>
+              ))}
             </select>
           </div>
         </div>

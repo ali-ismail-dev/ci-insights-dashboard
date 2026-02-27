@@ -92,10 +92,21 @@ class WebhookController extends Controller
             ], Response::HTTP_OK);
         }
         
-        // Extract action from payload (if present)
+        // Extract payload and attempt to determine an action for events that don't
+        // include a top-level "action" field (e.g. check_run uses status instead).
         $payload = $request->all();
         $action = $payload['action'] ?? null;
-        
+
+        // derive action for certain event types
+        if ($eventType === 'check_run' && isset($payload['check_run']['status'])) {
+            $action = $payload['check_run']['status'];
+        } elseif ($eventType === 'status' && isset($payload['state'])) {
+            $action = $payload['state'];
+        } elseif ($eventType === 'push') {
+            // push events don't really have an "action" but we can set a constant
+            $action = 'push';
+        }
+
         // Determine repository ID from payload
         $repositoryId = $this->extractRepositoryId($payload);
         
@@ -189,6 +200,21 @@ class WebhookController extends Controller
             'response_time_ms' => round($responseTime, 2),
         ], Response::HTTP_ACCEPTED);
     }
+
+    /**
+     * Stub for GitLab webhooks - not implemented yet.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function gitlab(Request $request): JsonResponse
+    {
+        // Always return 501 Not Implemented for now
+        return response()->json([
+            'error' => 'Not implemented',
+            'message' => 'GitLab webhooks are not yet supported',
+        ], Response::HTTP_NOT_IMPLEMENTED);
+    }
     
     /**
      * Verify GitHub webhook signature using HMAC-SHA256
@@ -225,11 +251,20 @@ class WebhookController extends Controller
      */
     private function extractRepositoryId(array $payload): ?int
     {
-        // GitHub webhook structure
+        // GitHub webhook structure gives us the external repo ID
         if (isset($payload['repository']['id'])) {
-            return (int) $payload['repository']['id'];
+            $external = (int) $payload['repository']['id'];
+
+            // Translate to local repository primary key if it exists
+            $repo = \App\Models\Repository::where('external_id', $external)->first();
+            if ($repo) {
+                return $repo->id;
+            }
+
+            // if no matching local repo, fall back to null
+            return null;
         }
-        
+
         // Organization-level events might not have repository
         return null;
     }
@@ -305,22 +340,6 @@ class WebhookController extends Controller
         
         // Default priority: Everything else
         return 'default';
-    }
-    
-    /**
-     * GitLab webhook endpoint (future implementation)
-     * 
-     * POST /webhooks/gitlab
-     * 
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function gitlab(Request $request): JsonResponse
-    {
-        return response()->json([
-            'error' => 'Not implemented',
-            'message' => 'GitLab webhooks are not yet supported',
-        ], Response::HTTP_NOT_IMPLEMENTED);
     }
     
     /**

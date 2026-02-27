@@ -92,20 +92,28 @@ class UpdatePullRequestMetricsAction
      */
     private function updateCIMetrics(PullRequest $pullRequest): void
     {
-        // Get latest test run for this PR
+        // Get the latest test run status for overall CI status
         $latestTestRun = $pullRequest->testRuns()
-            ->where('status', 'completed')
+            ->whereIn('status', ['success', 'failure', 'error'])
             ->latest()
             ->first();
 
+        // But aggregate counts from all test runs
+        $allTestRuns = $pullRequest->testRuns()
+            ->whereIn('status', ['success', 'failure', 'error'])
+            ->get();
+
         if ($latestTestRun) {
             $pullRequest->ci_status = $this->mapTestRunStatus($latestTestRun->status);
-            $pullRequest->ci_checks_count = $latestTestRun->total_tests;
-            $pullRequest->ci_checks_passed = $latestTestRun->passed_tests;
-            $pullRequest->ci_checks_failed = $latestTestRun->failed_tests;
         } else {
-            // No CI runs yet
             $pullRequest->ci_status = null;
+        }
+
+        if ($allTestRuns->isNotEmpty()) {
+            $pullRequest->ci_checks_count = $allTestRuns->sum('total_tests');
+            $pullRequest->ci_checks_passed = $allTestRuns->sum('passed_tests');
+            $pullRequest->ci_checks_failed = $allTestRuns->sum('failed_tests');
+        } else {
             $pullRequest->ci_checks_count = 0;
             $pullRequest->ci_checks_passed = 0;
             $pullRequest->ci_checks_failed = 0;
@@ -122,7 +130,7 @@ class UpdatePullRequestMetricsAction
     {
         // Aggregate test metrics from all test runs for this PR
         $testRuns = $pullRequest->testRuns()
-            ->where('status', 'completed')
+            ->whereIn('status', ['success', 'failure', 'error'])
             ->get();
 
         if ($testRuns->isNotEmpty()) {

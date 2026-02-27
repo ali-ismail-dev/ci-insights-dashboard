@@ -137,6 +137,24 @@ class WebhookRequest extends FormRequest
     }
 
     /**
+     * Include header values in the data to be validated.
+     *
+     * This allows rules defined for headers (e.g. `X-GitHub-Event`)
+     * and `required_if` clauses referencing them to work correctly
+     * without the caller needing to merge headers manually.
+     *
+     * @return array
+     */
+    public function validationData(): array
+    {
+        return array_merge($this->all(), [
+            'X-GitHub-Event' => $this->header('X-GitHub-Event'),
+            'X-GitHub-Delivery' => $this->header('X-GitHub-Delivery'),
+            'X-Hub-Signature-256' => $this->header('X-Hub-Signature-256'),
+        ]);
+    }
+
+    /**
      * Additional validation for pull_request events
      */
     private function validatePullRequestEvent($validator): void

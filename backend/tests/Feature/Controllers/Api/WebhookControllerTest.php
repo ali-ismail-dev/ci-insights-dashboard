@@ -30,6 +30,8 @@ class WebhookControllerTest extends TestCase
             'external_id' => 123,
             'name' => 'test-repo',
             'full_name' => 'owner/test-repo',
+            'owner' => 'owner',
+            'html_url' => 'https://github.com/owner/test-repo',
         ]);
 
         // Set webhook secret for testing

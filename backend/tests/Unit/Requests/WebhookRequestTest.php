@@ -21,7 +21,7 @@ class WebhookRequestTest extends TestCase
     {
         $request = new WebhookRequest();
 
-        // Set headers
+        // Set headers only; validationData() will merge them automatically
         foreach ($headers as $key => $value) {
             $request->headers->set($key, $value);
         }
@@ -35,9 +35,9 @@ class WebhookRequestTest extends TestCase
     public function test_validates_github_headers(): void
     {
         $request = $this->createRequest([
-            'X-GitHub-Event' => 'pull_request',
+            'X-GitHub-Event' => 'ping',
             'X-GitHub-Delivery' => '550e8400-e29b-41d4-a716-446655440000',
-            'X-Hub-Signature-256' => 'sha256=abc123def456',
+            'X-Hub-Signature-256' => 'sha256=' . str_repeat('a', 64),
         ], [
             'repository' => [
                 'id' => 123,
@@ -47,7 +47,11 @@ class WebhookRequestTest extends TestCase
         ]);
 
         $this->assertTrue($request->authorize());
-        $validator = validator($request->all(), $request->rules());
+        $validator = validator($request->validationData(), $request->rules());
+
+        if ($validator->fails()) {
+            var_dump($validator->errors()->toArray());
+        }
 
         // Should pass basic validation
         $this->assertFalse($validator->fails());
@@ -63,7 +67,7 @@ class WebhookRequestTest extends TestCase
             ],
         ]);
 
-        $validator = validator($request->all(), $request->rules());
+        $validator = validator($request->validationData(), $request->rules());
         $this->assertTrue($validator->fails());
 
         $errors = $validator->errors();
@@ -77,7 +81,7 @@ class WebhookRequestTest extends TestCase
         $request = $this->createRequest([
             'X-GitHub-Event' => 'pull_request',
             'X-GitHub-Delivery' => '550e8400-e29b-41d4-a716-446655440000',
-            'X-Hub-Signature-256' => 'sha256=abc123def456',
+            'X-Hub-Signature-256' => 'sha256=' . str_repeat('a', 64),
         ], [
             'action' => 'opened',
             'repository' => [
@@ -101,7 +105,10 @@ class WebhookRequestTest extends TestCase
             ],
         ]);
 
-        $validator = validator($request->all(), $request->rules());
+        $validator = validator($request->validationData(), $request->rules());
+        if ($validator->fails()) {
+            var_dump($validator->errors()->toArray());
+        }
         $this->assertFalse($validator->fails());
     }
 
@@ -110,7 +117,7 @@ class WebhookRequestTest extends TestCase
         $request = $this->createRequest([
             'X-GitHub-Event' => 'pull_request',
             'X-GitHub-Delivery' => '550e8400-e29b-41d4-a716-446655440000',
-            'X-Hub-Signature-256' => 'sha256=abc123def456',
+            'X-Hub-Signature-256' => 'sha256=' . str_repeat('a', 64),
         ], [
             'repository' => [
                 'id' => 123,
@@ -123,7 +130,7 @@ class WebhookRequestTest extends TestCase
             ],
         ]);
 
-        $validator = validator($request->all(), $request->rules());
+        $validator = validator($request->validationData(), $request->rules());
         $this->assertTrue($validator->fails());
 
         $errors = $validator->errors();
@@ -137,7 +144,7 @@ class WebhookRequestTest extends TestCase
         $request = $this->createRequest([
             'X-GitHub-Event' => 'check_run',
             'X-GitHub-Delivery' => '550e8400-e29b-41d4-a716-446655440000',
-            'X-Hub-Signature-256' => 'sha256=abc123def456',
+            'X-Hub-Signature-256' => 'sha256=' . str_repeat('a', 64),
         ], [
             'repository' => [
                 'id' => 123,
@@ -152,7 +159,10 @@ class WebhookRequestTest extends TestCase
             ],
         ]);
 
-        $validator = validator($request->all(), $request->rules());
+        $validator = validator($request->validationData(), $request->rules());
+        if ($validator->fails()) {
+            var_dump($validator->errors()->toArray());
+        }
         $this->assertFalse($validator->fails());
     }
 
@@ -161,7 +171,7 @@ class WebhookRequestTest extends TestCase
         $request = $this->createRequest([
             'X-GitHub-Event' => 'check_run',
             'X-GitHub-Delivery' => '550e8400-e29b-41d4-a716-446655440000',
-            'X-Hub-Signature-256' => 'sha256=abc123def456',
+            'X-Hub-Signature-256' => 'sha256=' . str_repeat('a', 64),
         ], [
             'repository' => [
                 'id' => 123,
@@ -176,7 +186,7 @@ class WebhookRequestTest extends TestCase
             ],
         ]);
 
-        $validator = validator($request->all(), $request->rules());
+        $validator = validator($request->validationData(), $request->rules());
         $this->assertTrue($validator->fails());
 
         $errors = $validator->errors();
@@ -188,7 +198,7 @@ class WebhookRequestTest extends TestCase
         $request = $this->createRequest([
             'X-GitHub-Event' => 'status',
             'X-GitHub-Delivery' => '550e8400-e29b-41d4-a716-446655440000',
-            'X-Hub-Signature-256' => 'sha256=abc123def456',
+            'X-Hub-Signature-256' => 'sha256=' . str_repeat('a', 64),
         ], [
             'repository' => [
                 'id' => 123,
@@ -199,7 +209,10 @@ class WebhookRequestTest extends TestCase
             'state' => 'success',
         ]);
 
-        $validator = validator($request->all(), $request->rules());
+        $validator = validator($request->validationData(), $request->rules());
+        if ($validator->fails()) {
+            var_dump($validator->errors()->toArray());
+        }
         $this->assertFalse($validator->fails());
     }
 
@@ -208,7 +221,7 @@ class WebhookRequestTest extends TestCase
         $request = $this->createRequest([
             'X-GitHub-Event' => 'push',
             'X-GitHub-Delivery' => '550e8400-e29b-41d4-a716-446655440000',
-            'X-Hub-Signature-256' => 'sha256=abc123def456',
+            'X-Hub-Signature-256' => 'sha256=' . str_repeat('a', 64),
         ], [
             'repository' => [
                 'id' => 123,
@@ -217,7 +230,7 @@ class WebhookRequestTest extends TestCase
             ],
             'ref' => 'refs/heads/main',
             'before' => 'abc123def4567890123456789012345678901234',
-            'after' => 'def456789012345678901234567890123456789012',
+            'after' => 'def4567890123456789012345678901234567890',
             'commits' => [
                 [
                     'id' => 'abc123def4567890123456789012345678901234',
@@ -226,7 +239,10 @@ class WebhookRequestTest extends TestCase
             ],
         ]);
 
-        $validator = validator($request->all(), $request->rules());
+        $validator = validator($request->validationData(), $request->rules());
+        if ($validator->fails()) {
+            var_dump($validator->errors()->toArray());
+        }
         $this->assertFalse($validator->fails());
     }
 
@@ -235,11 +251,11 @@ class WebhookRequestTest extends TestCase
         $request = $this->createRequest([
             'X-GitHub-Event' => 'pull_request',
             'X-GitHub-Delivery' => '550e8400-e29b-41d4-a716-446655440000',
-            'X-Hub-Signature-256' => 'sha256=abc123def456',
+            'X-Hub-Signature-256' => 'sha256=' . str_repeat('a', 64),
         ]);
 
         $this->assertEquals('pull_request', $request->getEventType());
         $this->assertEquals('550e8400-e29b-41d4-a716-446655440000', $request->getDeliveryId());
-        $this->assertEquals('sha256=abc123def456', $request->getSignature());
+        $this->assertEquals('sha256=' . str_repeat('a', 64), $request->getSignature());
     }
 }

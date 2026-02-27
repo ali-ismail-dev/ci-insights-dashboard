@@ -79,6 +79,7 @@ Route::get('/user', function (Request $request) {
 // Webhooks (no auth)
 Route::prefix('webhooks')->group(function () {
     Route::post('github', [WebhookController::class, 'github'])->name('webhooks.github');
+    Route::post('gitlab', [WebhookController::class, 'gitlab'])->name('webhooks.gitlab');
     Route::post('test', [WebhookController::class, 'test'])->name('webhooks.test');
 });
 

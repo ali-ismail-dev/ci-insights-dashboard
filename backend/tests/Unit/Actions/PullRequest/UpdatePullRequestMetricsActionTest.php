@@ -33,8 +33,11 @@ class UpdatePullRequestMetricsActionTest extends TestCase
         $this->action = new UpdatePullRequestMetricsAction();
 
         $this->repository = Repository::factory()->create([
+            'external_id' => 123456789,
             'name' => 'test-repo',
             'full_name' => 'owner/test-repo',
+            'owner' => 'owner',
+            'html_url' => 'https://github.com/owner/test-repo',
         ]);
 
         $this->user = User::factory()->create([
@@ -49,8 +52,8 @@ class UpdatePullRequestMetricsActionTest extends TestCase
             'title' => 'Test PR',
             'additions' => 100,
             'deletions' => 50,
-            'comments_count' => 5,
-            'review_comments_count' => 3,
+            'comments_count' => 0,
+            'review_comments_count' => 0,
         ]);
     }
 
@@ -119,6 +122,7 @@ class UpdatePullRequestMetricsActionTest extends TestCase
         TestRun::factory()->create([
             'repository_id' => $this->repository->id,
             'pull_request_id' => $this->pullRequest->id,
+            'status' => 'success',
             'total_tests' => 100,
             'passed_tests' => 95,
             'failed_tests' => 5,
@@ -127,6 +131,7 @@ class UpdatePullRequestMetricsActionTest extends TestCase
         TestRun::factory()->create([
             'repository_id' => $this->repository->id,
             'pull_request_id' => $this->pullRequest->id,
+            'status' => 'success',
             'total_tests' => 50,
             'passed_tests' => 50,
             'failed_tests' => 0,

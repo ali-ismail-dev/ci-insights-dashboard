@@ -130,6 +130,12 @@ export const api = {
   resolveAlert: (id: number, notes?: string) => 
     apiClient.post<Alert>(`/alerts/${id}/resolve`, { notes }).then(r => r.data),
 
+  // Global search (returns both repositories and pull requests)
+  search: (query: string) =>
+    apiClient.get<{ repositories: Repository[]; pull_requests: PullRequest[] }>('/search', {
+      params: { q: query },
+    }).then(r => r.data),
+
   // Authentication
   login: (email: string, password: string) =>
     apiClient.post('/login', { email, password }),

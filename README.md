@@ -248,16 +248,41 @@ docker-compose exec app php artisan queue:flush
 
 ### Search Management
 
+The backend makes use of **Laravel Scout** to provide full‑text search over
+repositories and pull requests.  By default the docker configuration sets
+`SCOUT_DRIVER=meilisearch` and a Meilisearch container is available on port 7700.
+
+If you prefer Elasticsearch you can swap the driver:
+
 ```bash
-# Import models to Meilisearch
+# install official or community scout driver for elastic
+composer require babenkoivan/scout-elasticsearch-driver
+# then point driver to elastic in .env
+SCOUT_DRIVER=elasticsearch
+SCOUT_ELASTICSEARCH_HOST=http://elasticsearch:9200
+```
+
+Models marked with the `Searchable` trait (`Repository`, `PullRequest`, etc.)
+are automatically indexed when created/updated.  You can rebuild or clean the
+index using the Artisan commands below:
+
+```bash
+# Import models to the configured engine
 docker-compose exec app php artisan scout:import "App\Models\PullRequest"
 
 # Flush search index
 docker-compose exec app php artisan scout:flush "App\Models\PullRequest"
 
-# Access Meilisearch
+# Access Meilisearch (default)
 open http://localhost:7700
 ```
+
+The UI exposes a global search icon in the top header (visible on every page).
+Clicking it opens a modal where users can type a query; results are fetched
+from `GET /api/search` and include matching repositories and pull requests.
+This is intended as an application‑wide lookup rather than a page‑specific
+filter.  Repository list pages still support scoped filtering via the
+`search` query parameter.
 
 ### Container Management
 

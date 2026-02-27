@@ -91,6 +91,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     // Dashboard
     Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+
+    // Global search (uses Scout driver configured via SCOUT_DRIVER)
+    Route::get('search', \App\Http\Controllers\Api\SearchController::class)
+        ->middleware('throttle:search');
     
     // Repositories
     Route::apiResource('repositories', RepositoryController::class)->only(['index', 'show']);

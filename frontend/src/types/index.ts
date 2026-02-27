@@ -198,6 +198,14 @@ export interface TestResult {
   retry_count: number;
   flakiness_score: number | null;
   failure_rate: number | null;
+
+// ---------------------------------------------------------------------------
+// Search API
+// ---------------------------------------------------------------------------
+export interface SearchResponse {
+  repositories: Repository[];
+  pull_requests: PullRequest[];
+}
   tags: string[];
   executed_at: string;
   created_at: string;

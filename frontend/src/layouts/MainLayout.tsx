@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Activity
 } from 'lucide-react';
+import GlobalSearch from '@/components/GlobalSearch';
 import { useAuth } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -208,23 +209,8 @@ export function MainLayout() {
 
           </div>
         </header>
-        {/* Search Overlay - Senior Level Modal */}
-        {isSearchOpen && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSearchOpen(false)}>
-            <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center px-4 py-4 border-b border-slate-100 dark:border-slate-800">
-                <Search className="h-5 w-5 text-slate-400 mr-3" />
-                <input
-                  autoFocus
-                  placeholder="Search repositories, PRs, or tests..."
-                  className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white font-medium"
-                />
-                <kbd className="hidden sm:inline-block px-2 py-1 text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 rounded">ESC</kbd>
-              </div>
-              <div className="p-4 text-center text-sm text-slate-500 italic">Start typing to see results...</div>
-            </div>
-          </div>
-        )}
+        {/* global search modal rendered separately */}
+        <GlobalSearch open={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
         {/* Notifications Dropdown */}
         {isNotificationsOpen && (

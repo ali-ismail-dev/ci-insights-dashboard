@@ -132,7 +132,10 @@ return new class extends Migration
             $table->index(['is_flaky', 'executed_at'], 'idx_testresult_flaky_executed');
             
             // Full-text index for test name search (MySQL only, not PlanetScale)
-            $table->fullText(['test_name', 'test_file'], 'ft_testresult_name_file');
+            if (config('database.default') === 'mysql') {
+                $table->fullText(['test_name', 'test_file'], 'ft_testresult_name_file');
+            }
+           
         });
         
         // Add table comment

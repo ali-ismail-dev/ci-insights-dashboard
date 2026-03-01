@@ -1,4 +1,5 @@
 # CI Insights Dashboard
+
 Monitoring Test: [Current Time]
 > **Production-grade Code Review & CI Analytics Platform**  
 > Built with Laravel 11, React 18, and Docker

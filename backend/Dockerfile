@@ -75,7 +75,7 @@ COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 FROM base AS dependencies
 
 # Copy dependency manifests
-COPY backend/composer.json backend/composer.lock ./
+COPY composer.json composer.lock ./
 # Install Composer dependencies
 # --no-dev for production, with dev for development stage
 RUN COMPOSER_PROCESS_TIMEOUT=900 composer install \
@@ -113,7 +113,7 @@ RUN apk del php82-dev autoconf g++ make linux-headers
 COPY docker/php/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 
 # Copy application code
-COPY backend/ .
+COPY . .
 
 # Generate optimized autoloader with dev dependencies
 RUN composer dump-autoload --optimize
@@ -135,7 +135,7 @@ CMD ["php-fpm", "-F"]
 FROM dependencies AS production
 
 # Copy application code (excluding dev files)
-COPY --chown=www-data:www-data backend/ .
+COPY --chown=www-data:www-data . .
 
 # Install production-only dependencies
 RUN composer install \

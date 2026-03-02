@@ -66,8 +66,8 @@ RUN echo "listen = /var/run/php/php-fpm.sock" >> /usr/local/etc/php-fpm.d/zz-doc
     && echo "decorate_workers_output = no" >> /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Copy PHP configuration
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
-COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY ../docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY ../docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 # ------------------------------------------------------------------------------
 # Stage 2: Dependencies Installation
@@ -110,7 +110,7 @@ RUN pecl install xdebug \
 RUN apk del php82-dev autoconf g++ make linux-headers
 
 # Copy Xdebug configuration
-COPY docker/php/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
+COPY ../docker/php/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 
 # Copy application code
 COPY . .

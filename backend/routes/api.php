@@ -17,6 +17,8 @@ Route::get('/sanctum/csrf-cookie', function () {
     return response()->json(['message' => 'CSRF cookie set']);
 })->middleware('web');
 
+Route::get('/repositories/verify', [RepositoryController::class, 'verify']);
+
 
 // Authentication routes (token-based, no sessions needed)
 Route::post('/login', function (Request $request) {
@@ -108,6 +110,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Test Runs
     Route::apiResource('test-runs', TestRunController::class)->only(['show']);
     
+
+
     // Alerts
     Route::apiResource('alerts', AlertController::class)->only(['index']);
     Route::post('alerts/{alert}/acknowledge', [AlertController::class, 'acknowledge']);

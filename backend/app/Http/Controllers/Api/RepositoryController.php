@@ -9,6 +9,8 @@ use App\Http\Resources\RepositoryResource;
 use App\Models\Repository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -55,7 +57,10 @@ class RepositoryController extends Controller
         // Senior Move: Auto-fetch metadata if it's a GitHub repo
         if ($validated['provider'] === 'github') {
             try {
-                $response = \Illuminate\Support\Facades\Http::get("https://api.github.com{$validated['full_name']}");
+               $response = Http::withToken(config('services.github.token'))
+    ->get("https://api.github.com/repos/{$validated['full_name']}");
+
+
                 
                 if ($response->successful()) {
                     $githubData = $response->json();
@@ -117,6 +122,21 @@ class RepositoryController extends Controller
     ]);
 
     return new RepositoryResource($repository);
+}
+
+
+public function verify(Request $request): JsonResponse
+{
+    $fullName = $request->query('full_name');
+    $response = \Illuminate\Support\Facades\Http::withToken(config('services.github.token'))
+    ->get("https://api.github.com/repos/{$fullName}");
+
+    
+    if ($response->failed()) {
+        return response()->json(['error' => 'Repository not found'], 404);
+    }
+    
+    return response()->json($response->json());
 }
 
 }

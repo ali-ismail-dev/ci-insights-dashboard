@@ -33,6 +33,7 @@ return [
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
         'webhook_secret' => env('GITHUB_WEBHOOK_SECRET'),
         'redirect' => env('GITHUB_REDIRECT_URI'),
+        'token' => env('GITHUB_TOKEN'),
     ],
 
 

@@ -27,7 +27,10 @@ export default function AddRepositoryModal({ isOpen, onClose }: AddRepositoryMod
     setError(null);
 
     try {
-      const response = await fetch(`https://api.github.com{fullName}`);
+   // Ensure it matches exactly what you put in routes/api.php
+const response = await fetch(`http://localhost:8080/api/repositories/verify?full_name=${fullName}`);
+
+
       if (!response.ok) throw new Error('Repository not found on GitHub');
       
       const data = await response.json();

@@ -46,7 +46,7 @@ export default function AddRepositoryModal({ isOpen, onClose }: AddRepositoryMod
 
     const submitData = {
       external_id: previewData.id,
-      provider: 'github',
+      provider: 'github' as const,
       full_name: previewData.full_name,
       name: previewData.name,
       owner: previewData.owner.login,

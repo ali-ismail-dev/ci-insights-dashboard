@@ -97,7 +97,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('throttle:search');
     
     // Repositories
-    Route::apiResource('repositories', RepositoryController::class)->only(['index', 'show']);
+    Route::apiResource('repositories', RepositoryController::class)->only(['index', 'show', 'store']);
     Route::get('repositories/{repository}/pull-requests', [PullRequestController::class, 'index']);
     Route::get('repositories/{repository}/test-runs', [TestRunController::class, 'index']);
     Route::get('repositories/{repository}/flaky-tests', [TestRunController::class, 'flakyTests']);

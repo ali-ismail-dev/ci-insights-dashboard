@@ -143,4 +143,9 @@ class Repository extends Model
     {
         return $query->where('provider', $provider);
     }
+    public function alerts(): \Illuminate\Database\Eloquent\Relations\HasMany
+{
+    return $this->hasMany(\App\Models\Alert::class);
+}
+
 }

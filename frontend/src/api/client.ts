@@ -80,6 +80,9 @@ export const api = {
   getRepository: (id: number) => 
     apiClient.get<Repository>(`/repositories/${id}`).then(r => r.data),
 
+  createRepository: (repositoryData: Partial<Repository>) =>
+    apiClient.post<Repository>('/repositories', repositoryData).then(r => r.data),
+
   // Pull Requests
   getPullRequests: (repositoryId: number, filters?: PullRequestFilters, page = 1, perPage = 20) =>
     apiClient.get<PaginatedResponse<PullRequest>>(`/repositories/${repositoryId}/pull-requests`, {

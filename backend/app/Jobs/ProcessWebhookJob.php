@@ -14,6 +14,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use App\Actions\TestRun\ProcessTestRunAction;
 use Throwable;
 
 
@@ -290,8 +291,7 @@ class ProcessWebhookJob implements ShouldQueue
         }
         
         // Only process completed runs
-        $status = $testRunData['status'] ?? $testRunData['conclusion'] ?? null;
-        
+$status = $testRunData['status'] ?? null;        
         if ($status !== 'completed') {
             Log::debug('Skipping incomplete check event', [
                 'event_id' => $this->event->id,
@@ -301,7 +301,8 @@ class ProcessWebhookJob implements ShouldQueue
         }
         
         // Process test run (creates test_runs and test_results records)
-        $testRun = app(ProcessTestRunAction::class)->execute(
+        $testRun = app(\App\Actions\TestRun\ProcessTestRunAction::class)
+->execute(
             $this->event->repository_id,
             $testRunData,
             $this->event->event_type
@@ -467,4 +468,4 @@ class ProcessWebhookJob implements ShouldQueue
             "repository:{$this->event->repository_id}",
         ];
     }
-}
+}   

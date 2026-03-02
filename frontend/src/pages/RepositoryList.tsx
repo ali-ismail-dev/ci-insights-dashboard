@@ -2,10 +2,13 @@ import { useRepositories } from '@/hooks/useApi';
 import { GitBranch, Star, Lock, Globe, ChevronRight, Plus, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import AddRepositoryModal from '@/components/AddRepositoryModal';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 export default function RepositoryList() {
   const { data: repositories, isLoading, refetch } = useRepositories();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Handle both Array and Paginated Object responses
   const repoList = Array.isArray(repositories) ? repositories : (repositories as any)?.data || [];
@@ -32,7 +35,7 @@ export default function RepositoryList() {
             <RefreshCw className="w-5 h-5" />
           </button>
           <button 
-  onClick={() => toast('GitHub Repository Import is coming soon!', { style: { background: '#3b82f6', color: 'white' } })}
+  onClick={() => setIsModalOpen(true)}
   className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95"
 >
   <Plus className="w-4 h-4" /> Add Repository
@@ -91,6 +94,11 @@ export default function RepositoryList() {
           ))}
         </div>
       )}
+      
+      <AddRepositoryModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   );
 }

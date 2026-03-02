@@ -138,14 +138,14 @@ class CalculateDailyMetricsJob implements ShouldQueue
             DailyMetric::updateOrCreate(
                 [
                     'repository_id' => $repository->id,
-                    'date' => $date,
+                    'metric_date' => $date,
                 ],
                 $metrics
             );
         });
     }
 
-    /**
+     /**
      * Gather all metrics for the repository and date
      */
     private function gatherMetrics(Repository $repository, string $date): array
@@ -155,34 +155,28 @@ class CalculateDailyMetricsJob implements ShouldQueue
             'prs_opened' => $this->countPullRequestsOpened($repository, $date),
             'prs_closed' => $this->countPullRequestsClosed($repository, $date),
             'prs_merged' => $this->countPullRequestsMerged($repository, $date),
-            'open_prs_count' => $this->countOpenPullRequests($repository, $date),
+            'prs_active' => $this->countOpenPullRequests($repository, $date),
 
-            // Test metrics
-            'tests_run' => $this->countTestRuns($repository, $date),
-            'tests_passed' => $this->countTestsPassed($repository, $date),
-            'tests_failed' => $this->countTestsFailed($repository, $date),
+            // Test & CI/CD metrics
+            'test_runs_total' => $this->countCIBuilds($repository, $date),
+            'test_runs_passed' => $this->countCIBuildsPassed($repository, $date),
+            'test_runs_failed' => $this->countCIBuildsFailed($repository, $date),
+            'ci_success_rate' => $this->calculateSuccessRate($repository, $date),
+            'avg_test_duration' => $this->calculateAverageCIDuration($repository, $date),
             'flaky_tests_detected' => $this->countFlakyTestsDetected($repository, $date),
 
-            // CI/CD metrics
-            'ci_builds_total' => $this->countCIBuilds($repository, $date),
-            'ci_builds_passed' => $this->countCIBuildsPassed($repository, $date),
-            'ci_builds_failed' => $this->countCIBuildsFailed($repository, $date),
-            'avg_ci_duration' => $this->calculateAverageCIDuration($repository, $date),
-
             // Code quality metrics
-            'code_coverage_avg' => $this->calculateAverageCodeCoverage($repository, $date),
-            'lines_added' => $this->countLinesAdded($repository, $date),
-            'lines_deleted' => $this->countLinesDeleted($repository, $date),
+            'avg_line_coverage' => $this->calculateAverageCodeCoverage($repository, $date),
+            'total_code_changes' => $this->countLinesAdded($repository, $date) + $this->countLinesDeleted($repository, $date),
 
             // Time metrics
             'avg_cycle_time' => $this->calculateAverageCycleTime($repository, $date),
-            'avg_time_to_review' => $this->calculateAverageTimeToReview($repository, $date),
+            'avg_time_to_first_review' => $this->calculateAverageTimeToReview($repository, $date),
             'avg_time_to_merge' => $this->calculateAverageTimeToMerge($repository, $date),
 
             // Alert metrics
-            'alerts_created' => $this->countAlertsCreated($repository, $date),
+            'alerts_triggered' => $this->countAlertsCreated($repository, $date),
             'alerts_resolved' => $this->countAlertsResolved($repository, $date),
-            'active_alerts_count' => $this->countActiveAlerts($repository, $date),
         ];
     }
 
@@ -208,13 +202,13 @@ class CalculateDailyMetricsJob implements ShouldQueue
             ->count();
     }
 
-    private function countOpenPullRequests(Repository $repository, string $date): int
+   private function countOpenPullRequests(Repository $repository, string $date): int
     {
         return $repository->pullRequests()
             ->where('state', 'open')
-            ->where('created_at', '<=', $date . ' 23:59:59')
+            ->whereDate('created_at', '<=', $date)
             ->where(function ($query) use ($date) {
-                $query->where('closed_at', '>', $date . ' 23:59:59')
+                $query->whereDate('closed_at', '>', $date)
                       ->orWhereNull('closed_at');
             })
             ->count();
@@ -253,9 +247,10 @@ class CalculateDailyMetricsJob implements ShouldQueue
     private function countCIBuilds(Repository $repository, string $date): int
     {
         return $repository->testRuns()
-            ->whereDate('created_at', $date)
-            ->where('status', 'completed')
-            ->count();
+    ->whereDate('created_at', $date)
+    ->whereIn('status', ['success', 'failure', 'error', 'completed']) 
+    ->count();
+
     }
 
     private function countCIBuildsPassed(Repository $repository, string $date): int
@@ -355,13 +350,13 @@ class CalculateDailyMetricsJob implements ShouldQueue
             ->count();
     }
 
-    private function countActiveAlerts(Repository $repository, string $date): int
+     private function countActiveAlerts(Repository $repository, string $date): int
     {
         return $repository->alerts()
             ->where('status', 'active')
-            ->where('created_at', '<=', $date . ' 23:59:59')
+            ->whereDate('created_at', '<=', $date)
             ->where(function ($query) use ($date) {
-                $query->where('resolved_at', '>', $date . ' 23:59:59')
+                $query->whereDate('resolved_at', '>', $date)
                       ->orWhereNull('resolved_at');
             })
             ->count();
@@ -391,4 +386,12 @@ class CalculateDailyMetricsJob implements ShouldQueue
             $this->repositoryId ? "repo:{$this->repositoryId}" : 'all-repos',
         ];
     }
+    private function calculateSuccessRate(Repository $repository, string $date): float
+{
+    $total = $this->countCIBuilds($repository, $date);
+    if ($total === 0) return 0;
+    
+    return ($this->countCIBuildsPassed($repository, $date) / $total) * 100;
+}
+
 }

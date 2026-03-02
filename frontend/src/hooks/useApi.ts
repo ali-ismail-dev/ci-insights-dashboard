@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   PullRequestFilters,
   Alert,
+  Repository,
 } from '../types';
 import { api } from '@api/client';
 import toast from 'react-hot-toast';
@@ -59,6 +60,21 @@ export function useRepository(id: number) {
     queryFn: () => api.getRepository(id),
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled: !!id,
+  });
+}
+
+export function useCreateRepository() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (repositoryData: Partial<Repository>) => api.createRepository(repositoryData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.repositories });
+      toast.success('Repository added successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to add repository');
+    },
   });
 }
 

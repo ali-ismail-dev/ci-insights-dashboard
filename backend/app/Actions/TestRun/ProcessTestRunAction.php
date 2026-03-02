@@ -190,7 +190,8 @@ class ProcessTestRunAction
         $completedAt = $this->parseTimestamp($data['completed_at'] ?? null);
         
         if ($startedAt && $completedAt) {
-            return $completedAt->diffInSeconds($startedAt);
+            return (int) abs($completedAt->diffInSeconds($startedAt));
+
         }
         
         return null;

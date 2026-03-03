@@ -54,7 +54,8 @@ COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www
 
 # Configure PHP-FPM for production performance
-RUN echo "listen = /var/run/php/php-fpm.sock" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+RUN mkdir -p /var/run/php \
+    && echo "listen = /var/run/php/php-fpm.sock" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
     && echo "listen.mode = 0666" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
     && echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
     && echo "pm.max_children = 20" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
@@ -63,7 +64,8 @@ RUN echo "listen = /var/run/php/php-fpm.sock" >> /usr/local/etc/php-fpm.d/zz-doc
     && echo "pm.max_spare_servers = 10" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
     && echo "pm.max_requests = 500" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
     && echo "catch_workers_output = yes" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
-    && echo "decorate_workers_output = no" >> /usr/local/etc/php-fpm.d/zz-docker.conf
+    && echo "decorate_workers_output = no" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && chown -R www-data:www-data /var/run/php
 
 # Copy PHP configuration
 COPY ../docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
@@ -137,6 +139,10 @@ FROM dependencies AS production
 
 # Copy application code (excluding dev files)
 COPY --chown=www-data:www-data . .
+
+# Create socket directory and set permissions
+RUN mkdir -p /var/run/php \
+    && chown -R www-data:www-data /var/run/php
 
 # Install production-only dependencies
 RUN composer install \

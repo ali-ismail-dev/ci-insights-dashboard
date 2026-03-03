@@ -7,6 +7,9 @@
 
 FROM php:8.2-fpm-alpine
 
+# let composer use unlimited memory so builds don't fail in tight containers
+ENV COMPOSER_MEMORY_LIMIT=-1
+
 # Install system dependencies and PHP extensions
 RUN apk add --no-cache \
     libzip-dev bash curl git unzip zip \

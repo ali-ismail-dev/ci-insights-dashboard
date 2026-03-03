@@ -117,7 +117,7 @@ COPY ../docker/php/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 COPY . .
 
 # Generate optimized autoloader with dev dependencies
-RUN composer dump-autoload --optimize --no-plugins
+RUN composer dump-autoload --optimize --no-plugins --no-scripts
 
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www \
@@ -149,7 +149,7 @@ RUN composer install \
     && composer clear-cache
 
 # Generate optimized autoloader
-RUN composer dump-autoload --optimize --classmap-authoritative --no-plugins
+RUN composer dump-autoload --optimize --classmap-authoritative --no-plugins --no-scripts
 
 # Optimize Laravel for production
 RUN php artisan config:cache || true \

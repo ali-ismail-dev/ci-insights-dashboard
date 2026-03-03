@@ -165,8 +165,10 @@ RUN php artisan config:cache || true \
 
 # Set production permissions (read-only except cache/logs)
 RUN mkdir -p /var/log/nginx \
+    && mkdir -p /var/lib/nginx/logs \
     && chown -R www-data:www-data /var/www \
     && chown -R www-data:www-data /var/log/nginx \
+    && chown -R www-data:www-data /var/lib/nginx \
     && chmod -R 755 /var/www \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache \
     && find /var/www -type f -exec chmod 644 {} \; \
@@ -180,8 +182,8 @@ RUN rm -rf \
     /var/www/README.md \
     /var/www/phpunit.xml
 
-# Security: Run as non-root user
-USER www-data
+# Start as root to bind to port 80, then switch
+USER root
 
 # Expose web server port
 EXPOSE 80
@@ -197,4 +199,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
 # Start Nginx and PHP-FPM
-CMD ["sh", "-c", "nginx -g 'daemon off;' & php-fpm -F && wait"]
+CMD ["sh", "-c", "nginx -g 'daemon off;' & su www-data -s /bin/sh -c 'php-fpm -F' && wait"]

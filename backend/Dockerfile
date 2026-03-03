@@ -191,8 +191,8 @@ EXPOSE 80
 # Expose PHP-FPM port (for internal use)
 EXPOSE 9000
 
-# Copy Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy Nginx configuration (server-only for conf.d inclusion)
+COPY server.conf /etc/nginx/conf.d/laravel.conf
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

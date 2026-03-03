@@ -83,6 +83,7 @@ RUN COMPOSER_PROCESS_TIMEOUT=900 composer install \
     --no-scripts \
     --no-autoloader \
     --prefer-dist \
+    --no-plugins \
     && composer clear-cache
 
 # ------------------------------------------------------------------------------
@@ -116,7 +117,7 @@ COPY ../docker/php/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 COPY . .
 
 # Generate optimized autoloader with dev dependencies
-RUN composer dump-autoload --optimize
+RUN composer dump-autoload --optimize --no-plugins
 
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www \
@@ -144,10 +145,11 @@ RUN composer install \
     --no-scripts \
     --prefer-dist \
     --optimize-autoloader \
+    --no-plugins \
     && composer clear-cache
 
 # Generate optimized autoloader
-RUN composer dump-autoload --optimize --classmap-authoritative
+RUN composer dump-autoload --optimize --classmap-authoritative --no-plugins
 
 # Optimize Laravel for production
 RUN php artisan config:cache || true \

@@ -1,0 +1,64 @@
+services:
+  - type: web
+    name: ci-insights-dashboard
+    runtime: docker
+    plan: starter
+    dockerfile: backend/Dockerfile.render
+    dockerbuildContext: .
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_NAME
+        value: "CI Insights Dashboard"
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: notice
+      - key: CACHE_DRIVER
+        value: redis
+      - key: QUEUE_CONNECTION
+        value: redis
+      - key: SESSION_DRIVER
+        value: redis
+      - key: DB_CONNECTION
+        value: mysql
+      - key: SCOUT_DRIVER
+        value: meilisearch
+      - key: DB_HOST
+        fromDatabase:
+          name: ci-insights-mysql
+          property: host
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_DATABASE
+        value: ci_insights
+      - key: DB_USERNAME
+        value: render
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: ci-insights-mysql
+          property: password
+      - key: REDIS_HOST
+        fromService:
+          name: ci-insights-redis
+          property: host
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_PASSWORD
+        fromService:
+          name: ci-insights-redis
+          property: password
+  
+  - type: redis
+    name: ci-insights-redis
+    plan: starter
+
+databases:
+  - name: ci-insights-mysql
+    engine: mysql
+    version: "8.0"
+    plan: starter
+    initialQuery: >
+      CREATE DATABASE IF NOT EXISTS ci_insights;

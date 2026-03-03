@@ -190,7 +190,7 @@ EXPOSE 80
 EXPOSE 9000
 
 # Copy Nginx configuration
-COPY ../docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

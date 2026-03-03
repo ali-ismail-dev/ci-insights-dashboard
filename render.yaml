@@ -3,7 +3,7 @@ services:
     name: ci-insights-dashboard
     runtime: docker
     plan: starter
-    dockerfile: backend/Dockerfile.render
+    dockerfile: backend/Dockerfile
     dockerbuildContext: .
     envVars:
       - key: APP_ENV

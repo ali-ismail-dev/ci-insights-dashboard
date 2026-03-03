@@ -23,7 +23,8 @@ RUN apk add --no-cache \
     icu-dev \
     ca-certificates \
     openssl \
-    autoconf g++ make supervisor wget
+    autoconf g++ make supervisor wget \
+    nginx
 
 # 2. Configure and Install GD (separate to isolate errors)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -163,7 +164,9 @@ RUN php artisan config:cache || true \
     && php artisan view:cache || true
 
 # Set production permissions (read-only except cache/logs)
-RUN chown -R www-data:www-data /var/www \
+RUN mkdir -p /var/log/nginx \
+    && chown -R www-data:www-data /var/www \
+    && chown -R www-data:www-data /var/log/nginx \
     && chmod -R 755 /var/www \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache \
     && find /var/www -type f -exec chmod 644 {} \; \
@@ -180,12 +183,18 @@ RUN rm -rf \
 # Security: Run as non-root user
 USER www-data
 
-# Expose PHP-FPM port
+# Expose web server port
+EXPOSE 80
+
+# Expose PHP-FPM port (for internal use)
 EXPOSE 9000
+
+# Copy Nginx configuration
+COPY ../docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD php-fpm -t || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
-# Start PHP-FPM
-CMD ["php-fpm", "-F"]
+# Start Nginx and PHP-FPM
+CMD ["sh", "-c", "nginx -g 'daemon off;' & php-fpm -F"]

@@ -36,14 +36,11 @@ COPY composer.json composer.lock ./
 
 # Install dependencies
 RUN COMPOSER_PROCESS_TIMEOUT=900 composer install \
-    --no-dev --no-interaction --no-autoloader --prefer-dist && \
+    --no-dev --no-interaction --prefer-dist --no-scripts && \
     composer clear-cache
 
 # Copy application code
 COPY . .
-
-# Generate autoloader
-RUN composer dump-autoload --optimize
 
 # Create necessary directories
 RUN mkdir -p /var/run/php storage/logs bootstrap/cache && \

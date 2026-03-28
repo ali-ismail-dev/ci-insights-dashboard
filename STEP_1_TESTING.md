@@ -1,4 +1,4 @@
-# Step 1: Docker Environment & Laravel Setup - Testing Guide
+# Step 1: Docker Environment & Laravel Setup - Testing Guide.
 
 ## Overview
 This document provides comprehensive testing procedures for verifying the Docker environment and Laravel project initialization. Follow each step sequentially to ensure the foundation is solid before proceeding to the next phase.
